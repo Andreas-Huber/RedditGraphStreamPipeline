@@ -1,4 +1,5 @@
-import java.io.{BufferedInputStream, File, FileInputStream}
+import java.io.{BufferedInputStream, File, FileInputStream, InputStream}
+import java.net.{ URL}
 
 import com.github.luben.zstd.ZstdInputStream
 
@@ -10,28 +11,23 @@ object ReadFile extends App {
   //val filename = "//media//andreas//Andal//reddit//Reddit_Subreddits.ndjson.zst"
   val filename = "C:\\_\\ztest\\Reddit_Subreddits.ndjson.zst"
 
-
   val startedAtNanos = System.nanoTime()
 
-
   using(new FileInputStream(new File(filename))) { fileInputStream => {
-    using(new BufferedInputStream(fileInputStream)) { bufferedInputStream => {
-      using(new ZstdInputStream(fileInputStream)) { zstdInputStream => {
+      using(new BufferedInputStream(fileInputStream)) { bufferedInputStream => {
+        using(new ZstdInputStream(bufferedInputStream)) { zstdInputStream => {
 
+          var a: Int = 0;
+          while({
+            a = zstdInputStream.available()
+            a > 0}) {
+            zstdInputStream.readNBytes(a);
+          }
 
-        var a: Int = 0;
-        while({
-          a = zstdInputStream.available()
-          a > 0}) {
-          zstdInputStream.readNBytes(a);
-        }
-
-
-//        var count = 0;
-//        val result = scala.io.Source.fromInputStream(zstdInputStream).getLines().count(a => true);
-//        println("Lines: " + result)
+          // val result = scala.io.Source.fromInputStream(zstdInputStream).getLines().count(a => true);
+        }}
       }}
-    }}
+
   }}
 
   println("Seconds: " + (System.nanoTime() - startedAtNanos) / 1_000_000_000)
