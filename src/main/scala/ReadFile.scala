@@ -28,7 +28,8 @@ object ReadFile extends App {
 
 //        while(zstdInputStream.transferTo())
 
-          // val result = scala.io.Source.fromInputStream(zstdInputStream).getLines().count(a => true);
+          val result = scala.io.Source.fromInputStream(zstdInputStream).getLines().count(a => true);
+          println("Lines: " + result)
         }}
       }}
 
