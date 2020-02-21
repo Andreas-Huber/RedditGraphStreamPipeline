@@ -1,4 +1,5 @@
 import java.io.{BufferedInputStream, File, FileInputStream}
+import java.net.URL
 
 import com.github.luben.zstd.ZstdInputStream
 
@@ -7,19 +8,25 @@ import scala.language.reflectiveCalls
 import Control._
 
 object ReadFile extends App {
-  val filename = "//media//andreas//Andal//reddit//Reddit_Subreddits.ndjson.zst"
+
+  val filename = "//home//andreas//redditcache/subreddits//Reddit_Subreddits.ndjson.zst"
   // val filename = "C:\\_\\ztest\\test.txt.zst"
+  val fileUrl = "https://reddittest81273.blob.core.windows.net/reddittest/Reddit_Subreddits.ndjson.zst"
+  val fileUrl2 = "https:////reddittest81273.blob.core.windows.net//reddittest//Reddit_Subreddits.ndjson.zst"
 
+  import java.io.InputStream
 
+//  new URL(fileUrl).openStream
+//  new FileInputStream(new File(filename))
   val startedAtNanos = System.nanoTime()
 
 
-  using(new FileInputStream(new File(filename))) { fileInputStream => {
+  using(new URL(fileUrl).openStream) { fileInputStream => {
     using(new BufferedInputStream(fileInputStream)) { bufferedInputStream => {
       using(new ZstdInputStream(bufferedInputStream)) { zstdInputStream => {
         var count = 0;
 
-        while(zstdInputStream.transferTo())
+//        while(zstdInputStream.transferTo())
 
         val result = scala.io.Source.fromInputStream(zstdInputStream).getLines().count(a => true);
         println("Lines: " + result)
