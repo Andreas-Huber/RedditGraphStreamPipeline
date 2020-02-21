@@ -28,10 +28,10 @@ object ReadFile extends App {
 
 //        while(zstdInputStream.transferTo())
 
-        val result = scala.io.Source.fromInputStream(zstdInputStream).getLines().count(a => true);
-        println("Lines: " + result)
+          // val result = scala.io.Source.fromInputStream(zstdInputStream).getLines().count(a => true);
+        }}
       }}
-    }}
+
   }}
 
   println("Seconds: " + (System.nanoTime() - startedAtNanos) / 1_000_000_000)
@@ -39,21 +39,36 @@ object ReadFile extends App {
 
 
 /*
-time zstd -t
+time zstd -t (linux ubuntu)
 
 Reddit_Subreddits.ndjson.zst: 78688602372 bytes
 
 real	0m31,697s
 user	0m30,284s
 sys	0m1,412s
-
 ---------------------------
-Input stream
+time zstd -t (WSL ubuntu)
+Reddit_Subreddits.ndjson.zst: 78688602372 bytes
+
+real    0m46.030s
+user    0m33.578s
+sys     0m12.391s
+---------------------------
+Input stream linux
 Lines: 49723295
 Seconds: 183
 
+---------------------------
+Buffered input stream linux
+Seconds: 185
 
 ---------------------------
-Buffered input stream
-Seconds: 185
+Input stream windows
+Seconds: 191
+
+
+
+---------------------------
+Buffered Input stream windows
+Seconds: 46
  */
