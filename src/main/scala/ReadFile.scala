@@ -12,7 +12,6 @@ object ReadFile extends App {
   val filename = "//home//andreas//redditcache/subreddits//Reddit_Subreddits.ndjson.zst"
   // val filename = "C:\\_\\ztest\\test.txt.zst"
   val fileUrl = "https://reddittest81273.blob.core.windows.net/reddittest/Reddit_Subreddits.ndjson.zst"
-  val fileUrl2 = "https:////reddittest81273.blob.core.windows.net//reddittest//Reddit_Subreddits.ndjson.zst"
 
   import java.io.InputStream
 
