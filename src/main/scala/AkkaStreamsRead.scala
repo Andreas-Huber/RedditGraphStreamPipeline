@@ -1,4 +1,4 @@
-import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
+import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream, PipedInputStream}
 
 import akka.stream._
 import akka.stream.scaladsl._
@@ -18,7 +18,7 @@ import com.github.luben.zstd.ZstdInputStream
 object AkkaStreamsRead extends App{
   implicit val system = ActorSystem("QuickStart")
   val filename = "E:\\Shared drives\\Reddit\\subreddits\\Reddit_Subreddits.ndjson.zst"
-  val fileout = "G:\\temp\\out.ndjson";
+  val fileout = "G:\\temp\\out.ndjson.gz";
 
 
   val fileInputStream = new FileInputStream(new File(filename))
@@ -33,11 +33,16 @@ object AkkaStreamsRead extends App{
 
   val source: Source[ByteString, Future[IOResult]] = StreamConverters.fromInputStream(() => zstdInputStream)
 
-  val toUpperCase: Flow[ByteString, ByteString, NotUsed] = Flow[ByteString].map(_.map(_.toChar.toUpper.toByte))
+//  Flow[ByteString].map(_.map(_.toChar.toUpper.toByte))
+  val toGzip: Flow[ByteString, ByteString, NotUsed] = Compression.gzip
 
   val sink: Sink[ByteString, Future[IOResult]] = StreamConverters.fromOutputStream(() => outputStream)
 
-  val eventualResult = source.via(toUpperCase).runWith(sink)
+  val eventualResult = source
+    .via(toGzip)
+    .async
+    .runWith(sink)
+
 
 //  val result = scala.io.Source.fromInputStream(zstdInputStream).getLines().count(a => true);
 //  val result = scala.io.Source.from
