@@ -1,7 +1,8 @@
 // Load submissions 
 CALL apoc.periodic.iterate(
-"CALL apoc.load.json('file:/RS_v2_2008-03.gz') YIELD value AS row",
-"	MERGE (submission:Submission {id:row.id})
+"CALL apoc.load.json('file:/RS_NEO') YIELD value AS row",
+"	
+	MERGE (submission:Submission {id:row.id})
     ON CREATE SET
         submission.id = row.id,
         submission.title = row.title
