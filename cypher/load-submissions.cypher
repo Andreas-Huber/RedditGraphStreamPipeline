@@ -1,6 +1,6 @@
 // Load submissions 
 CALL apoc.periodic.iterate(
-"CALL apoc.load.json('file:/RS_NEO') YIELD value AS row",
+"CALL apoc.load.json('file:/RS_NEO') YIELD value AS row WITH * WHERE NOT row.author = '[deleted]' RETURN *",
 "	
 	MERGE (submission:Submission {id:row.id})
     ON CREATE SET
@@ -19,6 +19,7 @@ CALL apoc.periodic.iterate(
     MERGE (subreddit:Subreddit {id:row.subreddit_id})
     ON CREATE SET
         subreddit.id = row.subreddit_id,
+        subreddit.title = row.subreddit,
         subreddit.subreddit = row.subreddit
 
 
