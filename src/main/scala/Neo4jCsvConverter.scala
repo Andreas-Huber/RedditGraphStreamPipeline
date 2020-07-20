@@ -32,7 +32,7 @@ object Neo4jCsvConverter extends App{
 
   val source: Source[ByteString, Future[IOResult]] = getCompressorInputStreamSource(fileIn)
 
-
+// todo: try json line sperator thingy
   val source2 = Source(Seq(ByteString("""{ "subreddit": """"), ByteString("""MySub , reddit", "id":"ab123"}"""), ByteString("\n"), ByteString("""{ "subreddit": "MySubreddit", "id":"ab123"}"""), ByteString("\n")))
   val source3 = FileIO.fromPath(Paths.get("C:\\import\\RS_2015-01"));
 
