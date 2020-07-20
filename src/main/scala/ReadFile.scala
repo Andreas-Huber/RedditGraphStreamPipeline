@@ -31,7 +31,6 @@ object ReadFile extends App {
           println("Lines: " + result)
         }}
       }}
-
   }}
 
   println("Seconds: " + (System.nanoTime() - startedAtNanos) / 1_000_000_000)
