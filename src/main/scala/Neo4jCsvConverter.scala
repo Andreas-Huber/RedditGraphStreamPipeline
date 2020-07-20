@@ -1,6 +1,6 @@
 import java.io.{BufferedInputStream, File, FileInputStream, FileNotFoundException}
 import java.nio.charset.StandardCharsets
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 
 import akka.actor.ActorSystem
 import akka.stream.IOResult
@@ -32,7 +32,9 @@ object Neo4jCsvConverter extends App{
 
   val source: Source[ByteString, Future[IOResult]] = getCompressorInputStreamSource(fileIn)
 
-  val source2 = Source(Seq(ByteString("stringstuff"), ByteString("ByteString\nThe\nquick\nbrown\nfox\n")))
+
+  val source2 = Source(Seq(ByteString("""{ "subreddit": """"), ByteString("""MySub , reddit", "id":"ab123"}"""), ByteString("\n"), ByteString("""{ "subreddit": "MySubreddit", "id":"ab123"}"""), ByteString("\n")))
+  val source3 = FileIO.fromPath(Paths.get("C:\\import\\RS_2015-01"));
 
   val toCsvLine: Flow[immutable.Seq[String], ByteString, _] = CsvFormatting.format()
 //    CsvFormatting.DOUBLE_QUOTE,
@@ -45,17 +47,17 @@ object Neo4jCsvConverter extends App{
   val sink: Sink[ByteString, Future[IOResult]] = FileIO.toPath(Paths.get(fileOut))
 //  val sinkLog: Sink[ByteString, NotUsed] = runForeach(i => println(i))
 
-  val eventualResult = source2
+  val eventualResult = source3
     .via(Framing.delimiter( //chunk the inputs up into actual lines of text
-      ByteString("\n"),
-      maximumFrameLength = 100,
+      ByteString("\r\n"),
+      maximumFrameLength = Int.MaxValue,
       allowTruncation = true))
 
-      .map(_.utf8String)
-    .runForeach(i => println(i))
+   .map(_.utf8String)
+   .map(_.parseJson.convertTo[Submission].toSeq)
+   .via(toCsvLine)
 
-//      .map(_.parseJson.convertTo[Submission].valueSeq)
-//    .via(toCsvLine)
+   .runForeach(i => println(i.utf8String))
 //    .runWith(sink)
 
 
