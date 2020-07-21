@@ -4,7 +4,7 @@ import java.nio.file.{Path, Paths}
 
 import akka.actor.ActorSystem
 import akka.stream.IOResult
-import akka.stream.scaladsl.{FileIO, Flow, Framing, Sink, Source, StreamConverters}
+import akka.stream.scaladsl.{FileIO, Flow, Framing, JsonFraming, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 
@@ -20,7 +20,7 @@ import akka.stream.alpakka.csv.scaladsl.{CsvFormatting, CsvQuotingStyle}
 
 object Neo4jCsvConverter extends App{
   implicit val system = ActorSystem("ReadArchives")
-  val fileIn = "C:\\import\\RS.zst"
+  val fileIn = "C:\\import\\RS_v2_2008-03.gz"
   val fileOut = "C:\\import\\RS.out"
 
   // create the formats and provide them implicitly
@@ -47,18 +47,19 @@ object Neo4jCsvConverter extends App{
   val sink: Sink[ByteString, Future[IOResult]] = FileIO.toPath(Paths.get(fileOut))
 //  val sinkLog: Sink[ByteString, NotUsed] = runForeach(i => println(i))
 
-  val eventualResult = source3
+  val eventualResult = source
     .via(Framing.delimiter( //chunk the inputs up into actual lines of text
-      ByteString("\r\n"),
+      ByteString("\n"),
       maximumFrameLength = Int.MaxValue,
       allowTruncation = true))
+//   .via(JsonFraming.objectScanner(Int.MaxValue))
 
-   .map(_.utf8String)
-   .map(_.parseJson.convertTo[Submission].toSeq)
-   .via(toCsvLine)
+    .map(_.utf8String)
+    .map(_.parseJson.convertTo[Submission].toSeq)
+    .via(toCsvLine)
 
-   .runForeach(i => println(i.utf8String))
-//    .runWith(sink)
+//   .runForeach(i => print(i.utf8String))
+    .runWith(sink)
 
 
   implicit val ec = system.dispatcher

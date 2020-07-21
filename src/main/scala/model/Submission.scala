@@ -2,6 +2,6 @@ package model
 
 import scala.collection.immutable
 
-case class Submission(subreddit: String, id:String){
-  def toSeq: immutable.Seq[String]  = Seq(subreddit, id)
+case class Submission(subreddit: Option[String],  id: Option[String]){
+  def toSeq: immutable.Seq[String]  = Seq(subreddit.getOrElse(""), id.getOrElse(""))
 }
