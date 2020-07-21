@@ -31,21 +31,20 @@ object Neo4jCsvConverter extends App{
 
 
   val source: Source[ByteString, Future[IOResult]] = getCompressorInputStreamSource(fileIn)
+  val sourceUc = FileIO.fromPath(Paths.get("C:\\import\\RS_2015-01"));
 
-// todo: try json line sperator thingy
-  val source2 = Source(Seq(ByteString("""{ "subreddit": """"), ByteString("""MySub , reddit", "id":"ab123"}"""), ByteString("\n"), ByteString("""{ "subreddit": "MySubreddit", "id":"ab123"}"""), ByteString("\n")))
-  val source3 = FileIO.fromPath(Paths.get("C:\\import\\RS_2015-01"));
-
-  val toCsvLine: Flow[immutable.Seq[String], ByteString, _] = CsvFormatting.format()
-//    CsvFormatting.DOUBLE_QUOTE,
-//    CsvFormatting.BACKSLASH,
-//    CsvFormatting.CR_LF,
-//    CsvQuotingStyle.Required,
-//    StandardCharsets.UTF_8,
-//    Optional<ByteString> byteOrderMark)
+  val toCsvLine: Flow[immutable.Seq[String], ByteString, _] = CsvFormatting.format(
+    CsvFormatting.Comma,
+    CsvFormatting.DoubleQuote,
+    CsvFormatting.Backslash,
+    "\n",
+    CsvQuotingStyle.Required,
+    StandardCharsets.UTF_8,
+    None)
 
   val sink: Sink[ByteString, Future[IOResult]] = FileIO.toPath(Paths.get(fileOut))
-//  val sinkLog: Sink[ByteString, NotUsed] = runForeach(i => println(i))
+
+
 
   val eventualResult = source
     .via(Framing.delimiter( //chunk the inputs up into actual lines of text
@@ -58,7 +57,7 @@ object Neo4jCsvConverter extends App{
     .map(_.parseJson.convertTo[Submission].toSeq)
     .via(toCsvLine)
 
-//   .runForeach(i => print(i.utf8String))
+    //.runForeach(i => print(i.utf8String))
     .runWith(sink)
 
 
