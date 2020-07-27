@@ -12,6 +12,7 @@ libraryDependencies += "org.tukaani" % "xz" % "1.8"
 libraryDependencies += "com.typesafe.akka" %% "akka-stream" % "2.6.6"
 libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-json-streaming" % "2.0.1"
 libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-csv" % "2.0.1"
+libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-file" % "2.0.1"
 libraryDependencies += "io.spray" %%  "spray-json" % "1.3.5"
 
 
