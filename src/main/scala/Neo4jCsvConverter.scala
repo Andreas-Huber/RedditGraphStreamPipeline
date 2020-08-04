@@ -60,16 +60,11 @@ object Neo4jCsvConverter extends App{
 
 
   val eventualResult = filesSource
-    .flatMapConcat(p =>
+    .flatMapConcat(file =>
     {
-//
-//      val fileName = p.getFileName;
-//      val outDir = p.getParent;
-//      val out = outDir + "\\out\\" + fileName + ".out"
+      println(file)
 
-      println(p)
-
-      getCompressorInputStreamSource(p.toString)
+      getCompressorInputStreamSource(file.toString)
         .via(ndJsonToCsvConverter).async
     })
     .runWith(FileIO.toPath(Paths.get(fileOut)))
