@@ -48,7 +48,7 @@ object Neo4jCsvConverter extends App {
       ByteString("\n"),
       maximumFrameLength = Int.MaxValue,
       allowTruncation = true))
-    .map(_.utf8String.parseJson.convertTo[Submission].toSeq) // Create json objects and then sequences of strings
+    .map(_.utf8String.parseJson.convertTo[Submission].toCsvSeq) // Create json objects and then sequences of strings
     .via(CsvFormatting.format( // Create csv line
       CsvFormatting.Comma,
       CsvFormatting.DoubleQuote,
