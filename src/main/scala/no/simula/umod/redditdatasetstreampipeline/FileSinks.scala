@@ -1,3 +1,5 @@
+package no.simula.umod.redditdatasetstreampipeline
+
 import java.nio.file.Path
 
 import akka.stream.scaladsl.{Broadcast, FileIO, Flow, GraphDSL, Sink, Source, ZipWith}
