@@ -15,4 +15,6 @@ libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-csv" % "2.0.
 libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-file" % "2.0.1"
 libraryDependencies += "io.spray" %%  "spray-json" % "1.3.5"
 
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.0" % Test
+
 
