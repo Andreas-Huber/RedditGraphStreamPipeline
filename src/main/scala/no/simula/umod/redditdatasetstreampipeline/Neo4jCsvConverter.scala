@@ -33,13 +33,22 @@ object Neo4jCsvConverter extends App {
 
   val sink: Sink[ByteString, Future[IOResult]] = FileIO.toPath(Paths.get(fileOut))
 
+
+  // Takes a NdJson ByteStrings and spits them out as Submission objects
+  val ndJsonToObjectConverter : Flow[ByteString, Submission, NotUsed] = Flow[ByteString]
+    .via(Framing.delimiter( //chunk the inputs up into actual lines of text
+      ByteString("\n"),
+      maximumFrameLength = Int.MaxValue,
+      allowTruncation = true))
+    .map(_.utf8String.parseJson.convertTo[Submission]) // Create json objects
+
   // Takes a NdJson ByteStrings and spits them out as CSV ByteStrings
   val ndJsonToCsvConverter = Flow[ByteString]
     .via(Framing.delimiter( //chunk the inputs up into actual lines of text
       ByteString("\n"),
       maximumFrameLength = Int.MaxValue,
-      allowTruncation = true)).async
-    .map(_.utf8String.parseJson.convertTo[Submission].toSeq).async // Create json objects and then sequences of strings
+      allowTruncation = true))
+    .map(_.utf8String.parseJson.convertTo[Submission].toSeq) // Create json objects and then sequences of strings
     .via(CsvFormatting.format( // Create csv line
       CsvFormatting.Comma,
       CsvFormatting.DoubleQuote,
@@ -48,6 +57,8 @@ object Neo4jCsvConverter extends App {
       CsvQuotingStyle.Required,
       StandardCharsets.UTF_8,
       None))
+
+  val objectToCsvConverter = // Take IToCsvSeq. ToSeq and get Headers
 
 
   val filesSource: Source[Path, NotUsed] = Directory.ls(submissionsDirectory).filter(p => p.getFileName.toString.startsWith("RS_"))
