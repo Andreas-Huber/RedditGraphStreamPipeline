@@ -36,7 +36,6 @@ object Neo4jCsvConverter extends App {
 
 
 
-
   // Takes a NdJson ByteStrings and spits them out as CSV ByteStrings
   val ndJsonToCsvConverter = Flow[ByteString]
     .via(Framing.delimiter( //chunk the inputs up into actual lines of text
