@@ -11,7 +11,9 @@ import akka.stream.alpakka.csv.scaladsl.{CsvFormatting, CsvQuotingStyle}
 import akka.stream.alpakka.file.scaladsl.Directory
 import akka.stream.scaladsl.{FileIO, Flow, Framing, Sink, Source, StreamConverters}
 import akka.util.ByteString
+
 import no.simula.umod.redditdatasetstreampipeline.model.{Submission, ToCsv}
+import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 import spray.json.DefaultJsonProtocol._
 import spray.json._
@@ -24,8 +26,7 @@ object Neo4jCsvConverter extends App {
   val fileOut = "C:\\import\\RS.out"
   val submissionsDirectory = Paths.get("C:\\import\\submissions\\");
 
-  // create the formats and provide them implicitly
-  implicit val submissionFormat = jsonFormat2(Submission)
+
 
   val startTime = System.nanoTime
 

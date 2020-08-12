@@ -14,9 +14,22 @@ class FlowsSpec extends AnyFlatSpec with BeforeAndAfter {
   implicit val system = ActorSystem("Test")
 
   override protected def after(fun: => Any)(implicit pos: Position): Unit = system.terminate()
+//
+//  "ndJsonToSubmission" should "should convert ToCsv traits to CSV ByteStrings" in {
+//    val conv = Flows.objectToCsv
+//
+//    val result = Source.single(new Submission(Option("SR"), Option("555")))
+//      .via(conv)
+//      .map(_.utf8String)
+//      .runWith(Sink.seq)
+//
+//    val res = Await.result(result, 3.seconds);
+//    assert(res(0) === "SR,555\n");
+//
+//  }
 
-  "A objectToCsvConverter" should "should convert ToCsv traits to CSV ByteStrings" in {
-    val conv = Flows.objectToCsvConverter
+  "objectToCsv" should "should convert ToCsv traits to CSV ByteStrings" in {
+    val conv = Flows.objectToCsv
 
     val result = Source.single(new Submission(Option("SR"), Option("555")))
       .via(conv)
