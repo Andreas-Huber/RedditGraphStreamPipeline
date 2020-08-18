@@ -4,14 +4,14 @@ import java.io.{BufferedInputStream, File, FileInputStream, FileNotFoundExceptio
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Path, Paths}
 
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
+import akka.actor.Status.{Failure, Success}
 import akka.stream.IOResult
 import akka.stream.alpakka.csv.scaladsl.{CsvFormatting, CsvQuotingStyle}
 import akka.stream.alpakka.file.scaladsl.Directory
-import akka.stream.scaladsl.{FileIO, Flow, Framing, Sink, Source, StreamConverters}
+import akka.stream.scaladsl.{FileIO, Flow, Framing, Keep, Sink, Source, StreamConverters}
 import akka.util.ByteString
-
 import no.simula.umod.redditdatasetstreampipeline.model.{Submission, ToCsv}
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
@@ -31,28 +31,12 @@ object Neo4jCsvConverter extends App {
 
   val sink: Sink[ByteString, Future[IOResult]] = FileIO.toPath(Paths.get(fileOut))
 
-
-  // Takes a NdJson ByteStrings and spits them out as CSV ByteStrings
-  val ndJsonToCsvConverter = Flow[ByteString]
-    .via(Framing.delimiter( //chunk the inputs up into actual lines of text
-      ByteString("\n"),
-      maximumFrameLength = Int.MaxValue,
-      allowTruncation = true))
-    .map(_.utf8String.parseJson.convertTo[Submission].toCsvSeq) // Create json objects and then sequences of strings
-    .via(CsvFormatting.format( // Create csv line
-      CsvFormatting.Comma,
-      CsvFormatting.DoubleQuote,
-      CsvFormatting.Backslash,
-      "\n",
-      CsvQuotingStyle.Required,
-      StandardCharsets.UTF_8,
-      None))
-
-
   val filesSource: Source[Path, NotUsed] = Directory.ls(submissionsDirectory).filter(p => p.getFileName.toString.startsWith("RS_"))
 
+  val fileSink = FileIO.toPath(Paths.get(fileOut))
+  val countSink = Sink.fold[Int, ByteString](0)((acc, _) => acc + 1)
 
-  val eventualResult = filesSource
+  val (eventualResult, countResult) = filesSource
     .flatMapMerge(numberOfThreads, file => {
       println(file)
 
@@ -60,18 +44,9 @@ object Neo4jCsvConverter extends App {
         .via(Flows.ndJsonToSubmission).async
         .via(Flows.objectToCsv)
     })
-    .runWith(FileIO.toPath(Paths.get(fileOut)))
-
-
-//  val eventualResult = filesSource
-//    .flatMapMerge(file => {
-//            println(file)
-//
-//            getCompressorInputStreamSource(file.toString)
-//              .via(Flows.ndJsonToSubmission)
-//              .via(Flows.objectToCsv)
-//          })
-//    .runWith(FileIO.toPath(Paths.get(fileOut)))
+    .alsoToMat(fileSink)(Keep.right)
+    .toMat(countSink)(Keep.both)
+    .run()
 
 
   //
@@ -96,31 +71,12 @@ object Neo4jCsvConverter extends App {
   ////      }
   //      .runForeach(f => println(f.count))
 
-
-  //  val sinkinger : Sink[Any, NotUsed] = Sink.cancelled;
-  //
-  //  val fl :  Flow[Path, ByteString, NotUsed] = Flow.fromSinkAndSource(sinkinger, getCompressorInputStreamSource(_));
-
-
-  //
-  //  val eventualResult : Future[Seq[Future[IOResult]]] = filesSource
-  //      .map(p =>
-  //        {
-  //          println(p.toString)
-  //          val subResult = Source.single(
-  //            getCompressorInputStreamSource(p.toString)
-  //              .via(ndJsonToCsvConverter)
-  //              .runWith(FileIO.toPath(Paths.get(fileOut)))
-  //          )
-  //        })
-  //    .runWith(Sink.seq)
-
-
-  //    .via(ndJsonToCsvConverter)
-
-
-  //    .runForeach(i => println(i))
-  //.runWith(sink)
+  countResult.onComplete {
+    case Success(Done) =>
+      println("Stream finished successfully.")
+    case Failure(e) =>
+      println(s"Stream failed with $e")
+  }
 
 
   implicit val ec = system.dispatcher
