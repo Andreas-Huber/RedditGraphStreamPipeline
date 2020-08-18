@@ -15,7 +15,6 @@ import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.{Submission, ToCsv}
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
-import spray.json.DefaultJsonProtocol._
 import spray.json._
 
 import scala.concurrent.Future
@@ -23,18 +22,14 @@ import scala.concurrent.Future
 object Neo4jCsvConverter extends App {
   implicit val system = ActorSystem("ReadArchives")
   val fileIn = "C:\\import\\RS_v2_2008-03.gz"
-  val fileOut = "C:\\import\\RS.out"
+  val fileOut = "C:\\import\\_RS.out"
   val submissionsDirectory = Paths.get("C:\\import\\submissions\\");
-
+  val numberOfThreads = 12;
 
 
   val startTime = System.nanoTime
 
-
-  val source: Source[ByteString, Future[IOResult]] = getCompressorInputStreamSource(fileIn)
-
   val sink: Sink[ByteString, Future[IOResult]] = FileIO.toPath(Paths.get(fileOut))
-
 
 
   // Takes a NdJson ByteStrings and spits them out as CSV ByteStrings
@@ -58,13 +53,25 @@ object Neo4jCsvConverter extends App {
 
 
   val eventualResult = filesSource
-    .flatMapConcat(file => {
+    .flatMapMerge(numberOfThreads, file => {
       println(file)
 
       getCompressorInputStreamSource(file.toString)
-        .via(ndJsonToCsvConverter).async
+        .via(Flows.ndJsonToSubmission).async
+        .via(Flows.objectToCsv)
     })
     .runWith(FileIO.toPath(Paths.get(fileOut)))
+
+
+//  val eventualResult = filesSource
+//    .flatMapMerge(file => {
+//            println(file)
+//
+//            getCompressorInputStreamSource(file.toString)
+//              .via(Flows.ndJsonToSubmission)
+//              .via(Flows.objectToCsv)
+//          })
+//    .runWith(FileIO.toPath(Paths.get(fileOut)))
 
 
   //
@@ -122,6 +129,9 @@ object Neo4jCsvConverter extends App {
     println(duration)
 
     system.terminate()
+    val durationTerminated = (System.nanoTime - startTime) / 1e9d
+    print("terminated after: ")
+    println(durationTerminated)
   })
 
 
