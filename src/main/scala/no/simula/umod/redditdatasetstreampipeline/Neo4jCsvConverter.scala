@@ -16,6 +16,9 @@ import no.simula.umod.redditdatasetstreampipeline.model.{Submission, ToCsv}
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 import spray.json._
+import scala.util.{Failure, Success}
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.Future
 
@@ -24,7 +27,7 @@ object Neo4jCsvConverter extends App {
   val fileIn = "C:\\import\\RS_v2_2008-03.gz"
   val fileOut = "C:\\import\\_RS.out"
   val submissionsDirectory = Paths.get("C:\\import\\submissions\\");
-  val numberOfThreads = 12;
+  val numberOfThreads = 6;
 
 
   val startTime = System.nanoTime
@@ -36,7 +39,7 @@ object Neo4jCsvConverter extends App {
   val fileSink = FileIO.toPath(Paths.get(fileOut))
   val countSink = Sink.fold[Int, ByteString](0)((acc, _) => acc + 1)
 
-  val (eventualResult, countResult) = filesSource
+  val (eventualResult) = filesSource
     .flatMapMerge(numberOfThreads, file => {
       println(file)
 
@@ -45,7 +48,7 @@ object Neo4jCsvConverter extends App {
         .via(Flows.objectToCsv)
     })
     .alsoToMat(fileSink)(Keep.right)
-    .toMat(countSink)(Keep.both)
+//    .toMat(countSink)(Keep.both)
     .run()
 
 
@@ -71,16 +74,41 @@ object Neo4jCsvConverter extends App {
   ////      }
   //      .runForeach(f => println(f.count))
 
-  countResult.onComplete {
-    case Success(Done) =>
-      println("Stream finished successfully.")
-    case Failure(e) =>
-      println(s"Stream failed with $e")
-  }
+//  countResult.onComplete {
+//    case scala.util.Success(_:Int) =>
+//      println("Stream finished successfully.")
+//    case scala.util.Failure(e) =>
+//      println(s"Stream failed with $e")
+//  }
+
+//  countResult.onComplete(_ => println(s"CountResult:"))
+
 
 
   implicit val ec = system.dispatcher
-  eventualResult.onComplete(_ => {
+  eventualResult.onComplete {
+    case scala.util.Success(_) => {
+      println("Pipeline finished successfully.")
+      completeAndTerminate()
+    }
+    case scala.util.Failure(e) => {
+      println(s"Pipeline failed with $e")
+      completeAndTerminate()
+    }
+  }
+
+//  eventualResult.onComplete(_ => {
+//    val duration = (System.nanoTime - startTime) / 1e9d
+//    println(duration)
+//
+//    system.terminate()
+//    val durationTerminated = (System.nanoTime - startTime) / 1e9d
+//    print("terminated after: ")
+//    println(durationTerminated)
+//  })
+
+
+  def completeAndTerminate() ={
     val duration = (System.nanoTime - startTime) / 1e9d
     println(duration)
 
@@ -88,8 +116,7 @@ object Neo4jCsvConverter extends App {
     val durationTerminated = (System.nanoTime - startTime) / 1e9d
     print("terminated after: ")
     println(durationTerminated)
-  })
-
+  }
 
   @throws[FileNotFoundException]
   @throws[CompressorException]

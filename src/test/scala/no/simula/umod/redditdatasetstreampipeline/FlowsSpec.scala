@@ -1,9 +1,12 @@
 package no.simula.umod.redditdatasetstreampipeline
 
+import java.nio.file.Paths
+
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.{FileIO, Keep, Sink, Source}
 import akka.util.ByteString
-import no.simula.umod.redditdatasetstreampipeline.model.Submission
+import no.simula.umod.redditdatasetstreampipeline.Neo4jCsvConverter.{fileOut, filesSource, numberOfThreads}
+import no.simula.umod.redditdatasetstreampipeline.model.{Submission, ToCsv}
 import org.scalactic.source.Position
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
@@ -42,6 +45,43 @@ class FlowsSpec extends AnyFlatSpec with BeforeAndAfter {
 
     val res = Await.result(result, 3.seconds);
     assert(res(0) === "SR,555\n");
+
+  }
+
+  "jsonParser" should "be able to deserialize lines from the archives" in {
+    import spray.json._
+    val source = """{"archived":true,"author":"[deleted]","author_flair_background_color":"","author_flair_css_class":null,"author_flair_text":null,"author_flair_text_color":"dark","brand_safe":false,"can_gild":false,"contest_mode":false,"created_utc":1206577677,"distinguished":null,"domain":"self.reddit.com","edited":false,"gilded":0,"hidden":false,"hide_score":false,"id":"6dis8","is_crosspostable":false,"is_reddit_media_domain":false,"is_self":false,"is_video":false,"link_flair_css_class":null,"link_flair_richtext":[],"link_flair_text":null,"link_flair_text_color":"dark","link_flair_type":"text","locked":false,"media":null,"media_embed":{},"no_follow":true,"num_comments":0,"num_crossposts":0,"over_18":false,"parent_whitelist_status":null,"permalink":"\/r\/Jeff_Is_Fat\/comments\/6dis8\/jeff_is_fat\/","retrieved_on":1522687818,"rte_mode":"markdown","score":1,"secure_media":null,"secure_media_embed":{},"selftext":"[deleted]","send_replies":true,"spoiler":false,"stickied":false,"subreddit":"Jeff_Is_Fat","subreddit_id":"t5_2qhnz","subreddit_name_prefixed":"r\/Jeff_Is_Fat","subreddit_type":"public","suggested_sort":null,"thumbnail":"default","thumbnail_height":null,"thumbnail_width":null,"title":"Jeff is fat!","url":"http:\/\/self.reddit.com","whitelist_status":null}"""
+    val jsonAst = source.parseJson
+  }
+
+  "jsonParser" should "be able to parse the whole file" in {
+    val fileSource = FileIO.fromPath(Paths.get("C:\\_\\RS_v2_2008-03"))
+    val countSink = Sink.fold[Int, ByteString](0)((acc, _) => acc + 1)
+
+
+
+    val sink1 = Sink.foreach(Blub.doNothing)
+    val sink2 = Sink.fold[Int, ToCsv](0)((acc, _) => acc + 1)
+
+
+    val (result, num) = fileSource
+      .via(Flows.ndJsonToSubmission)
+      .alsoToMat(sink1)(Keep.right)
+      .toMat(sink2)(Keep.both)
+      .run()
+
+    val res = Await.result(result, 300.seconds);
+    val numb = Await.result(num, 300.seconds);
+    println(numb)
+
+  }
+
+
+
+}
+
+object Blub{
+  def doNothing(x : Any): Unit ={
 
   }
 }
