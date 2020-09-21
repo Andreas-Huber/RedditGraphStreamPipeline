@@ -27,7 +27,7 @@ object Neo4jCsvConverter extends App {
   val fileIn = "C:\\import\\RS_v2_2008-03.gz"
   val fileOut = "C:\\import\\_RS.out"
   val submissionsDirectory = Paths.get("C:\\import\\submissions\\");
-  val numberOfThreads = 6;
+  val numberOfThreads = 8;
 
 
   val startTime = System.nanoTime
@@ -123,7 +123,9 @@ object Neo4jCsvConverter extends App {
   def getCompressorInputStreamSource(fileName: String): Source[ByteString, Future[IOResult]] = {
     val fileInputStream = new FileInputStream(new File(fileName))
     val bufferedInputStream = new BufferedInputStream(fileInputStream)
-    val compressorInputStream = new CompressorStreamFactory().createCompressorInputStream(bufferedInputStream)
+    val compressionName = CompressorStreamFactory.detect(bufferedInputStream)
+    val compressorInputStream = new CompressorStreamFactory()
+      .createCompressorInputStream(compressionName, bufferedInputStream, true)
     StreamConverters.fromInputStream(() => compressorInputStream)
   }
 }

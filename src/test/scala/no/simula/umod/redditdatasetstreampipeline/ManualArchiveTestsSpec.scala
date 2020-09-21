@@ -1,6 +1,6 @@
 package no.simula.umod.redditdatasetstreampipeline
 
-import java.io.{ByteArrayOutputStream, FileInputStream, FileOutputStream, InputStream}
+import java.io.{BufferedInputStream, ByteArrayOutputStream, FileInputStream, FileOutputStream, InputStream}
 import java.nio.file.Paths
 
 import akka.actor.ActorSystem
@@ -11,7 +11,7 @@ import org.scalactic.source.Position
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
-import org.tukaani.xz.XZInputStream
+import org.tukaani.xz.{SingleXZInputStream, XZInputStream}
 
 import scala.concurrent.Await
 
@@ -96,6 +96,41 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
     inputStream.close()
     outputStream.close()
 
+  }
+
+  "XZInputStream" should "be able to decompress with java buffered input steam" in {
+    val input = "C:\\import\\RS_v2_2008-03.xz"
+    val output = "C:\\_\\RS_v2_2008-03.outjavabuff"
+    val inputStream : InputStream = new FileInputStream(input)
+    val bufferedInputStream = new BufferedInputStream(inputStream)
+    val xzInputStream : XZInputStream = new XZInputStream(bufferedInputStream)
+    val outputStream = new FileOutputStream(output)
+
+    xzInputStream.transferTo(outputStream)
+
+    xzInputStream.close()
+    bufferedInputStream.close()
+    inputStream.close()
+    outputStream.close()
+
+  }
+
+  "SingleXZInputStream" should "be able to decompress with java buffered input steam" in {
+    val input = "C:\\import\\RS_v2_2008-03.xz"
+    val output = "C:\\_\\RS_v2_2008-03.outjavaxzsingle"
+    val inputStream : InputStream = new FileInputStream(input)
+    val bufferedInputStream = new BufferedInputStream(inputStream)
+    val singleXzInputStream = new SingleXZInputStream(bufferedInputStream)
+    val outputStream = new FileOutputStream(output)
+
+    singleXzInputStream.transferTo(outputStream)
+
+    singleXzInputStream.close()
+    bufferedInputStream.close()
+    inputStream.close()
+    outputStream.close()
+
+    // SingleXzInputStream has issues and stops
   }
 }
 
