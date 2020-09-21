@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import akka.NotUsed
 import akka.stream.{FlowShape, IOResult}
 import akka.stream.alpakka.csv.scaladsl.{CsvFormatting, CsvQuotingStyle}
-import akka.stream.scaladsl.{Balance, Flow, Framing, GraphDSL, JsonFraming, Merge, Source}
+import akka.stream.scaladsl.{Balance, Flow, Framing, GraphDSL, Merge, Source}
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import no.simula.umod.redditdatasetstreampipeline.model.{Submission, ToCsv}
@@ -23,7 +23,9 @@ object Flows {
       ByteString("\n"),
       maximumFrameLength = Int.MaxValue,
       allowTruncation = true))
-//    .via(JsonFraming.objectScanner(Int.MaxValue))
+    // Possible but costlier alternative to new lines would be
+    // To scan the stream for json objects
+    // .via(JsonFraming.objectScanner(Int.MaxValue))'
     .map(_.utf8String.parseJson.convertTo[Submission]) // Create json objects
 
   /**
