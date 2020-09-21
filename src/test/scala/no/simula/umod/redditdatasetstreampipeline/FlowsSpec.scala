@@ -72,6 +72,35 @@ class FlowsSpec extends AnyFlatSpec with BeforeAndAfter {
 
     val res = Await.result(result, 300.seconds);
     val numb = Await.result(num, 300.seconds);
+
+    assert(numb == 168227)
+    println(numb)
+
+  }
+
+  "jsonParser" should "be able to parse the whole compressed file" in {
+//    val path = "C:\\import\\RS_v2_2008-03.xz"
+    val path = "C:\\Users\\infin\\Downloads\\RS_v2_2008-03.xz"
+//    val path = "C:\\import\\RS_v2_2008-03.gz"
+    val compSource = Neo4jCsvConverter.getCompressorInputStreamSource(path)
+    val countSink = Sink.fold[Int, ByteString](0)((acc, _) => acc + 1)
+
+
+
+    val sink1 = Sink.foreach(Blub.doNothing)
+    val sink2 = Sink.fold[Int, ToCsv](0)((acc, _) => acc + 1)
+
+
+    val (result, num) = compSource
+      .via(Flows.ndJsonToSubmission)
+      .alsoToMat(sink1)(Keep.right)
+      .toMat(sink2)(Keep.both)
+      .run()
+
+    val res = Await.result(result, 300.seconds);
+    val numb = Await.result(num, 300.seconds);
+
+    assert(numb == 168227)
     println(numb)
 
   }
