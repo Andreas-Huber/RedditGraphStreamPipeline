@@ -23,6 +23,9 @@ object Flows {
       ByteString("\n"),
       maximumFrameLength = Int.MaxValue,
       allowTruncation = true))
+    // Possible but costlier alternative to new lines would be
+    // To scan the stream for json objects
+    // .via(JsonFraming.objectScanner(Int.MaxValue))'
     .map(_.utf8String.parseJson.convertTo[Submission]) // Create json objects
 
   /**
