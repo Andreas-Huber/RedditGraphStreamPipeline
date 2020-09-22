@@ -1,16 +1,15 @@
 package no.simula.umod.redditdatasetstreampipeline
 
-import java.io.{BufferedInputStream, ByteArrayOutputStream, FileInputStream, FileOutputStream, InputStream}
+import java.io.{BufferedInputStream, FileInputStream, FileOutputStream, InputStream}
 import java.nio.file.Paths
 
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{FileIO, Keep, Sink}
-import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.ToCsv
 import org.scalactic.source.Position
-import org.scalatest.{BeforeAndAfter, Ignore}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+import org.scalatest.{BeforeAndAfter, Ignore}
 import org.tukaani.xz.{SingleXZInputStream, XZInputStream}
 
 import scala.concurrent.Await
@@ -24,7 +23,7 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
   "jsonParser" should "be able to parse the whole file without compression" in {
     val fileSource = FileIO.fromPath(Paths.get("C:\\_\\RS_v2_2008-03"))
 
-    val doNothingSink = Sink.foreach(Blub.doNothing)
+    val doNothingSink = Sink.foreach(DoNothing.doNothing)
     val countSink = Sink.fold[Int, ToCsv](0)((acc, _) => acc + 1)
 
 
@@ -46,7 +45,7 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
     val path = "C:\\import\\RS_v2_2008-03.xz"
     val compSource = Neo4jCsvConverter.getCompressorInputStreamSource(path)
 
-    val doNothingSink = Sink.foreach(Blub.doNothing)
+    val doNothingSink = Sink.foreach(DoNothing.doNothing)
     val countSink = Sink.fold[Int, ToCsv](0)((acc, _) => acc + 1)
 
 
@@ -135,7 +134,7 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
   }
 }
 
-object Blub{
+object DoNothing{
   def doNothing(x : Any): Unit ={
 
   }
