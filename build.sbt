@@ -18,3 +18,16 @@ libraryDependencies += "io.spray" %%  "spray-json" % "1.3.5"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.2" % Test
 libraryDependencies += "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test
+
+
+assemblyJarName in assembly := "rdsp.jar"
+
+mainClass in assembly := Some("no.simula.umod.redditdatasetstreampipeline.Main")
+
+test in assembly := {}
+
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
+}
+

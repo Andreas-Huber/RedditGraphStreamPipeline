@@ -43,7 +43,7 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
 
   "jsonParser" should "be able to parse the whole compressed file" in {
     val path = "C:\\import\\RS_v2_2008-03.xz"
-    val compSource = Neo4jCsvConverter.getCompressorInputStreamSource(path)
+    val compSource = Main.getCompressorInputStreamSource(path)
 
     val doNothingSink = Sink.foreach(DoNothing.doNothing)
     val countSink = Sink.fold[Int, ToCsv](0)((acc, _) => acc + 1)
@@ -67,7 +67,7 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
     val input = "C:\\import\\RS_v2_2008-03.xz"
     val output = "C:\\_\\RS_v2_2008-03.out.ndjson"
 
-    val compSource = Neo4jCsvConverter.getCompressorInputStreamSource(input)
+    val compSource = Main.getCompressorInputStreamSource(input)
 
 
 
