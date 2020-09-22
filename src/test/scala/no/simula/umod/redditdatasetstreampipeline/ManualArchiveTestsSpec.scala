@@ -8,13 +8,14 @@ import akka.stream.scaladsl.{FileIO, Keep, Sink}
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.ToCsv
 import org.scalactic.source.Position
-import org.scalatest.BeforeAndAfter
+import org.scalatest.{BeforeAndAfter, Ignore}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.tukaani.xz.{SingleXZInputStream, XZInputStream}
 
 import scala.concurrent.Await
 
+@Ignore // Only for manual bug search
 class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
     implicit val system = ActorSystem("Test")
 
