@@ -19,3 +19,9 @@ jobs:
         java-version: 11
     - name: Run tests
       run: sbt test
+    - name: Build JAR with dependencies
+      run: sbt assembly
+    - uses: actions/upload-artifact@v2
+      with:
+        name: rdsp.jar
+        path: target/scala-2.13/rdsp.jar
