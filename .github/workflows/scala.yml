@@ -17,11 +17,14 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
+    - name: Run about
+      run: sbt about
     - name: Run tests
       run: sbt test
     - name: Build Zip Package witha all dependencies
       run: sbt universal:packageBin
-    - uses: actions/upload-artifact@v2
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
       with:
         name: rdsp.jar
         path: target/universal/redditdatasetstreampipeline-0.1.zip
