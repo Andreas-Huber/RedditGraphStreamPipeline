@@ -17,8 +17,6 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-    - name: Run about
-      run: sbt about
     - name: Run tests
       run: sbt test
     - name: Build Zip Package witha all dependencies
