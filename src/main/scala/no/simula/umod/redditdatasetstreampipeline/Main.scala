@@ -16,9 +16,8 @@ import scala.concurrent.duration.DurationInt
 
 object Main extends App {
   implicit val system = ActorSystem("ReadArchives")
-  val fileIn = "C:\\import\\RS_v2_2008-03.gz"
-  val fileOut = "C:\\_\\_RS.out"
-  val submissionsDirectory = Paths.get("C:\\import\\submissions\\");
+  val fileOut = "/home/andreas/rpipe"
+  val submissionsDirectory = Paths.get("./submissions");
   val numberOfThreads = 6;
 
 
@@ -43,6 +42,7 @@ object Main extends App {
     .toMat(countSink)(Keep.both)
     .run()
 
+  println("rpipe is ready to be read.")
 
   implicit val ec = system.dispatcher
   eventualResult.onComplete {
