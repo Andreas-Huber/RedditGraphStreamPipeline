@@ -21,7 +21,20 @@ jobs:
 
       - name: Build Zip Package witha all dependencies
         run: sbt universal:packageBin
-
+    
+      - name: Azure Login
+        uses: Azure/login@v1.1
+        with:
+          # Paste output of `az ad sp create-for-rbac` as value of secret variable: AZURE_CREDENTIALS
+          creds:  ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Upload to Azure Blob
+        run: az storage blob upload \
+             --account-name redditpipeline \
+             -f target/universal/redditdatasetstreampipeline-0.1.zip \
+             -c deploy \
+             -n rdsp-latest.zip
+      
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
