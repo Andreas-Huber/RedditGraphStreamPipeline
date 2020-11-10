@@ -29,11 +29,7 @@ jobs:
           creds:  ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: Upload to Azure Blob
-        run: az storage blob upload \
-             --account-name redditpipeline \
-             -f target/universal/redditdatasetstreampipeline-0.1.zip \
-             -c deploy \
-             -n rdsp-latest.zip
+        run: az storage blob upload --account-name redditpipeline -f target/universal/redditdatasetstreampipeline-0.1.zip -c deploy -n rdsp-latest.zip
       
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
