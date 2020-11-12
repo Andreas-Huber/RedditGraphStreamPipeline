@@ -13,8 +13,67 @@ import org.apache.commons.compress.compressors.{CompressorException, CompressorS
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
+import scala.sys.exit
 
 object Main extends App {
+  import scopt.OParser
+  val builder = OParser.builder[Config]
+  val parser1 = {
+    import builder._
+    OParser.sequence(
+      programName("redditdatasetstreampipeline"),
+      head("Reddit Dataset Stream Pipeline", "0.1"),
+
+      opt[File]('d', "dataset-dir")
+        .valueName("<directory>")
+        .action((x, c) => c.copy(datasetDirectory = x))
+        .text("Dataset directory that contains the submissions and comments folder. Default value: 'redditdataset'."),
+
+      opt[Unit]('s', "submissions")
+        .action((_, c) => c.copy(provideSubmissionsStream = true))
+        .text("Enables the submission output stream."),
+
+      opt[Unit]('c', "comments")
+        .action((_, c) => c.copy(provideCommentsStream = true))
+        .text("Enables the comments output stream."),
+
+      opt[File]('x',"submission-out")
+        .valueName("<file>")
+        .action((x, c) => c.copy(submissionsOutFile = x))
+        .text("File or named pipe where to write the submissions csv to. Default value: 'submissions.csv'"),
+
+      opt[File]('z',"comments-out")
+        .valueName("<file>")
+        .action((x, c) => c.copy(submissionsOutFile = x))
+        .text("File or named pipe where to write the comments csv to. Default value: 'commentsdd.csv'"),
+
+      opt[Int]('p',"concurrent-files")
+        .valueName("<number 1 to n>")
+        .action((x, c) => c.copy(numberOfConcurrentFiles = x))
+        .validate(x =>
+          if (x > 0) success
+          else failure("Value <number> must be >0"))
+        .text("Number of how many files should be read concurrently."),
+
+      help("help").text("prints this usage text"),
+    )
+  }
+
+  // OParser.parse returns Option[Config]
+  OParser.parse(parser1, args, Config()) match {
+    case Some(config) =>
+    // do something
+      println("do something")
+    case _ =>
+    // arguments are bad, error message will have been displayed
+      print("failed")
+  }
+
+  exit()
+  /////////////////
+  println("not reachable")
+
+
   implicit val system = ActorSystem("ReadArchives")
   val fileOut = "/home/andreas/rpipe"
   val submissionsDirectory = Paths.get("./submissions");
@@ -22,6 +81,7 @@ object Main extends App {
 
 
   val startTime = System.nanoTime
+
 
   val sink: Sink[ByteString, Future[IOResult]] = FileIO.toPath(Paths.get(fileOut))
 

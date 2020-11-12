@@ -2,12 +2,16 @@ package no.simula.umod.redditdatasetstreampipeline
 
 import java.io.File
 
-// todo: https://github.com/scopt/scopt
-// todo: https://stackoverflow.com/questions/2315912/best-way-to-parse-command-line-parameters
+/**
+ * Program configuration that is filled from the command line parameters.
+ * @see Scopt Documentation [[https://github.com/scopt/scopt]]
+ */
 case class Config (
-  submissions: Boolean = false,
-  comments: Boolean = false,
-  submissionsFile: File = new File("submissionsstream"),
-  commentsFile: File = new File("commentsstream"),
+  datasetDirectory: File = new File("redditdataset"),
+  provideSubmissionsStream: Boolean = false,
+  provideCommentsStream: Boolean = false,
+  submissionsOutFile: File = new File("submissions.csv"),
+  commentsOutFile: File = new File("comments.csv"),
+  numberOfConcurrentFiles: Int = Runtime.getRuntime().availableProcessors() / 2 + 1
 )
 
