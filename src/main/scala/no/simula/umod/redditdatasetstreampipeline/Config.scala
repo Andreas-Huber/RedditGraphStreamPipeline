@@ -3,7 +3,7 @@ package no.simula.umod.redditdatasetstreampipeline
 import java.io.File
 
 import no.simula.umod.redditdatasetstreampipeline.Experiment.Experiment
-import no.simula.umod.redditdatasetstreampipeline.ProgramMode.ProgramMode
+import no.simula.umod.redditdatasetstreampipeline.ProgramMode.{ProgramMode}
 
 
 /**

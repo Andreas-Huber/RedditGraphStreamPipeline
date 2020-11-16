@@ -9,15 +9,18 @@ import akka.stream.IOResult
 import akka.stream.alpakka.file.scaladsl.Directory
 import akka.stream.scaladsl.{FileIO, Keep, Sink, Source, StreamConverters}
 import akka.util.ByteString
+import no.simula.umod.redditdatasetstreampipeline.model.{ModelEntity, Submission}
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
+import scopt.OParser
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 import scala.sys.exit
 
 object Main extends App {
 
-  import scopt.OParser
+  val startTime = System.nanoTime
+
 
   val builder = OParser.builder[Config]
   val parser1 = {
@@ -75,7 +78,7 @@ object Main extends App {
     )
   }
 
-  // OParser.parse returns Option[Config]
+  // Parse and chose actions based on the selected options
   OParser.parse(parser1, args, Config()) match {
     case Some(config) => {
 
@@ -118,18 +121,18 @@ object Main extends App {
       exit(1)
   }
 
-  exit()
+//  exit()
   /////////////////
 
 
 
   implicit val system = ActorSystem("ReadArchives")
   val fileOut = "/home/andreas/rpipe"
-  val submissionsDirectory = Paths.get("./submissions");
+  val submissionsDirectory = Paths.get("~/reddit2006/submissions");
   val numberOfThreads = 6;
 
 
-  val startTime = System.nanoTime
+
 
 
   val sink: Sink[ByteString, Future[IOResult]] = FileIO.toPath(Paths.get(fileOut))
@@ -144,7 +147,7 @@ object Main extends App {
       println(file)
 
       getCompressorInputStreamSource(file.toString)
-        .via(Flows.ndJsonToSubmission).async
+        .via(Flows.ndJsonToObj(ModelEntity.SubmissionEntity)).async
         .via(Flows.objectToCsv)
     })
     .alsoToMat(fileSink)(Keep.right)
@@ -171,6 +174,7 @@ object Main extends App {
 
 
   def completeAndTerminate() ={
+    // ToDo: remove duplicate date log?
     val duration = (System.nanoTime - startTime) / 1e9d
     println(duration)
 
