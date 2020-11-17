@@ -4,7 +4,7 @@ case class Submission(
  subreddit: Option[String],
  id: Option[String],
  author: Option[String],
- title: Option[String],
+ title: Option[String]
 ) extends ToCsv {
 
   override def toCsvSeq: Seq[String] =  Seq(
@@ -21,7 +21,6 @@ case class Submission(
     "title"
   )
 }
-
 
 /*
 Sample Submission JSON:

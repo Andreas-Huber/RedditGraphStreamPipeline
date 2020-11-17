@@ -6,16 +6,17 @@ import akka.NotUsed
 import akka.stream.alpakka.csv.scaladsl.{CsvFormatting, CsvQuotingStyle}
 import akka.stream.scaladsl.{Flow, Framing}
 import akka.util.ByteString
-import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
+import no.simula.umod.redditdatasetstreampipeline.model.{ModelEntity, Submission, Comment, ToCsv}
 import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.ModelEntity
-import no.simula.umod.redditdatasetstreampipeline.model.{Comment, ModelEntity, Submission, ToCsv}
-import spray.json.DefaultJsonProtocol.jsonFormat2
+import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
+
 import spray.json._
 
-
 object Flows {
-  implicit val commentFormat: RootJsonFormat[Comment] = jsonFormat2(Comment)
 
+  /**
+   * Takes NdJson ByteStrings and converts them to the provided Entity
+   */
   def ndJsonToObj(entity: ModelEntity) : Flow[ByteString, ToCsv, NotUsed] = {
     val f = Flow[ByteString]
       .via(Framing.delimiter( //chunk the inputs up into actual lines of text
@@ -41,9 +42,7 @@ object Flows {
     // Possible but costlier alternative to new lines would be
     // To scan the stream for json objects
     // .via(JsonFraming.objectScanner(Int.MaxValue))'
-    .map(_.utf8String.parseJson.convertTo[Submission]) // Create json objects
-
-
+    .map(_.utf8String.parseJson.convertTo[Submission](submissionFormat)) // Create json objects
 
 
   /**

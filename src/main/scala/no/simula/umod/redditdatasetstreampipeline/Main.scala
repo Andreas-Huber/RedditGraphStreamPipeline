@@ -9,12 +9,12 @@ import akka.stream.IOResult
 import akka.stream.alpakka.file.scaladsl.Directory
 import akka.stream.scaladsl.{FileIO, Keep, Sink, Source, StreamConverters}
 import akka.util.ByteString
-import no.simula.umod.redditdatasetstreampipeline.model.{ModelEntity, Submission}
+import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 import scopt.OParser
 
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.sys.exit
 
 object Main extends App {
@@ -64,7 +64,7 @@ object Main extends App {
           opt[File]('z', "comments-out")
             .valueName("<file>")
             .action((x, c) => c.copy(submissionsOutFile = x))
-            .text("File or named pipe where to write the comments csv to. Default value: 'commentsdd.csv'"),
+            .text("File or named pipe where to write the comments csv to. Default value: 'comments.csv'"),
         ),
 
       cmd("statistics")
@@ -80,41 +80,36 @@ object Main extends App {
 
   // Parse and chose actions based on the selected options
   OParser.parse(parser1, args, Config()) match {
-    case Some(config) => {
+    case Some(config) =>
 
       println(f"Program mode: ${config.programMode}")
 
       config.programMode match {
 
-        case ProgramMode.PassTrough => {
+        case ProgramMode.PassTrough =>
           if(!config.provideSubmissionsStream && !config.provideCommentsStream){
             println("Neither '--submissions' nor '--comments' option enabled. No output will be generated.")
             exit(1)
           }
 
-          // ToDo: add passtrough
+          // ToDo: add pass trough
           println("Implement pass trough")
-        }
 
-        case ProgramMode.Statistics => {
+        case ProgramMode.Statistics =>
           println(f"Experiment: ${config.experiment}")
 
           // Select experiment
           config.experiment match {
             case Experiment.UserCount => println("matched user count")
-            case _ => {
+            case _ =>
               println("Experiment not implemented yet.")
               exit(1)
-            }
           }
-        }
 
-        case _ => {
+        case _ =>
           println("No program mode specified. Run the program with --help to see available commands.")
           exit(1)
-        }
       }
-    }
     case _ =>
       // arguments are bad, error message will have been displayed
       print("failed")
@@ -126,10 +121,10 @@ object Main extends App {
 
 
 
-  implicit val system = ActorSystem("ReadArchives")
+  implicit val system: ActorSystem = ActorSystem("ReadArchives")
   val fileOut = "/home/andreas/rpipe"
-  val submissionsDirectory = Paths.get("~/reddit2006/submissions");
-  val numberOfThreads = 6;
+  val submissionsDirectory = Paths.get("/home/andreas/reddit2006/submissions")
+  val numberOfThreads = 6
 
 
 
@@ -156,16 +151,14 @@ object Main extends App {
 
   println("rpipe is ready to be read.")
 
-  implicit val ec = system.dispatcher
+  implicit val ec: ExecutionContextExecutor = system.dispatcher
   eventualResult.onComplete {
-    case util.Success(_) => {
+    case util.Success(_) =>
       println("Pipeline finished successfully.")
       completeAndTerminate()
-    }
-    case util.Failure(e) => {
+    case util.Failure(e) =>
       println(s"Pipeline failed with $e")
       completeAndTerminate()
-    }
   }
 
   val count = Await.result(countResult, 365.days)
@@ -173,7 +166,7 @@ object Main extends App {
 
 
 
-  def completeAndTerminate() ={
+  def completeAndTerminate(): Unit ={
     // ToDo: remove duplicate date log?
     val duration = (System.nanoTime - startTime) / 1e9d
     println(duration)
