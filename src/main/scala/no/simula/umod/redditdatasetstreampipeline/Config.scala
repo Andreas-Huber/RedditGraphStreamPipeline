@@ -11,18 +11,18 @@ import no.simula.umod.redditdatasetstreampipeline.ProgramMode.ProgramMode
  * @see Scopt Documentation [[https://github.com/scopt/scopt]]
  */
 case class Config (
-  datasetDirectory: File = new File("redditdataset"),
-  numberOfConcurrentFiles: Int = Runtime.getRuntime().availableProcessors() / 2 + 1,
-  programMode: ProgramMode = ProgramMode.None,
+                    datasetDirectory: File = new File("redditdataset"),
+                    numberOfConcurrentFiles: Int = Runtime.getRuntime.availableProcessors(),
+                    programMode: ProgramMode = ProgramMode.None,
 
-  // Pass trough options
-  provideSubmissionsStream: Boolean = false,
-  provideCommentsStream: Boolean = false,
-  submissionsOutFile: File = new File("submissions.csv"),
-  commentsOutFile: File = new File("comments.csv"),
+                    // Pass trough options
+                    provideSubmissionsStream: Boolean = false,
+                    provideCommentsStream: Boolean = false,
+                    submissionsOutFile: File = new File("submissions.csv"),
+                    commentsOutFile: File = new File("comments.csv"),
 
-  // Statistics options
-  experiment: Experiment = Experiment.None
+                    // Statistics options
+                    experiment: Experiment = Experiment.None
 )
 
 object ProgramMode extends Enumeration {

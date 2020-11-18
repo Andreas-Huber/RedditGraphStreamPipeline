@@ -12,9 +12,9 @@ libraryDependencies += "com.github.luben" % "zstd-jni" % "1.4.5-12"
 libraryDependencies += "org.apache.commons" % "commons-compress" % "1.20"
 libraryDependencies += "org.tukaani" % "xz" % "1.8"
 libraryDependencies += "com.typesafe.akka" %% "akka-stream" % AkkaVersion
-libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-json-streaming" % "2.0.2"
-libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-csv" % "2.0.2"
-libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-file" % "2.0.2"
+libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-json-streaming" % AlpakkaVersion
+libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-csv" % AlpakkaVersion
+libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-file" % AlpakkaVersion
 libraryDependencies += "io.spray" %%  "spray-json" % "1.3.6"
 libraryDependencies += "com.github.scopt" %% "scopt" % "4.0.0-RC2"
 
