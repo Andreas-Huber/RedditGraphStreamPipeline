@@ -12,7 +12,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import scala.concurrent.Await
 
 class FlowsSpec extends AnyFlatSpec with BeforeAndAfter {
-  implicit val system = ActorSystem("Test")
+  private implicit val system: ActorSystem = ActorSystem("Test")
 
   override protected def after(fun: => Any)(implicit pos: Position): Unit = system.terminate()
 
@@ -27,8 +27,8 @@ class FlowsSpec extends AnyFlatSpec with BeforeAndAfter {
       .via(conv)
       .runWith(Sink.seq)
 
-    val res = Await.result(result, 3.seconds);
-    assert(res(0) === expected)
+    val res = Await.result(result, 3.seconds)
+    assert(res.head === expected)
     assert(res.length === 1)
   }
 
@@ -43,8 +43,8 @@ class FlowsSpec extends AnyFlatSpec with BeforeAndAfter {
       .via(conv)
       .runWith(Sink.seq)
 
-    val res = Await.result(result, 3.seconds);
-    assert(res(0) === expected)
+    val res = Await.result(result, 3.seconds)
+    assert(res.head === expected)
     assert(res.length === 1)
 
   }
@@ -57,8 +57,8 @@ class FlowsSpec extends AnyFlatSpec with BeforeAndAfter {
       .map(_.utf8String)
       .runWith(Sink.seq)
 
-    val res = Await.result(result, 3.seconds);
-    assert(res(0) === "Cats,555,ALF,Melmacs-best-cat-recipes.\n");
+    val res = Await.result(result, 3.seconds)
+    assert(res.head === "Cats,555,ALF,Melmacs-best-cat-recipes.\n")
 
   }
 

@@ -2,6 +2,7 @@ package no.simula.umod.redditdatasetstreampipeline.model
 
 import org.scalatest.flatspec.AnyFlatSpec
 
+//noinspection ZeroIndexToHead
 class SubmissionSpec extends AnyFlatSpec {
 
   "A submission" should "return all the provided fields given in the constructor" in {

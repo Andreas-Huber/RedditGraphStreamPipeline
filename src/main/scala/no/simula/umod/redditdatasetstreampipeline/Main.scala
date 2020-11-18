@@ -1,26 +1,16 @@
 package no.simula.umod.redditdatasetstreampipeline
 
-import java.io.{BufferedInputStream, File, FileInputStream, FileNotFoundException}
-import java.nio.file.{Path, Paths}
+import java.io.File
 
-import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.stream.IOResult
-import akka.stream.alpakka.file.scaladsl.Directory
-import akka.stream.scaladsl.{FileIO, Keep, Sink, Source, StreamConverters}
-import akka.util.ByteString
-import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity
-import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 import scopt.OParser
 
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.sys.exit
 
 object Main extends App {
 
   val startTime = System.nanoTime
-
+  implicit val system: ActorSystem = ActorSystem("ReadArchives")
 
   val builder = OParser.builder[Config]
   val parser1 = {
@@ -39,7 +29,7 @@ object Main extends App {
         .action((x, c) => c.copy(numberOfConcurrentFiles = x))
         .validate(x =>
           if (x > 0) success
-          else failure("Value <number> must be >0"))
+          else failure("Value <number> must be > 0"))
         .text("Number of how many files should be read concurrently."),
 
       help("help").text("prints this usage text"),
@@ -56,14 +46,14 @@ object Main extends App {
             .action((_, c) => c.copy(provideCommentsStream = true))
             .text("Enables the comments output stream."),
 
-          opt[File]('x', "submission-out")
+          opt[File]('x', "submissions-out")
             .valueName("<file>")
             .action((x, c) => c.copy(submissionsOutFile = x))
             .text("File or named pipe where to write the submissions csv to. Default value: 'submissions.csv'"),
 
           opt[File]('z', "comments-out")
             .valueName("<file>")
-            .action((x, c) => c.copy(submissionsOutFile = x))
+            .action((x, c) => c.copy(commentsOutFile = x))
             .text("File or named pipe where to write the comments csv to. Default value: 'comments.csv'"),
         ),
 
@@ -92,8 +82,8 @@ object Main extends App {
             exit(1)
           }
 
-          // ToDo: add pass trough
-          println("Implement pass trough")
+          val passTrough = new PassTrough(system, config)
+          passTrough.runPassTrough()
 
         case ProgramMode.Statistics =>
           println(f"Experiment: ${config.experiment}")
@@ -116,75 +106,12 @@ object Main extends App {
       exit(1)
   }
 
-//  exit()
-  /////////////////
-
-
-
-  implicit val system: ActorSystem = ActorSystem("ReadArchives")
-  val fileOut = "/home/andreas/rpipe"
-  val submissionsDirectory = Paths.get("/home/andreas/reddit2006/submissions")
-  val numberOfThreads = 6
-
-
-
-
-
-  val sink: Sink[ByteString, Future[IOResult]] = FileIO.toPath(Paths.get(fileOut))
-
-  val filesSource: Source[Path, NotUsed] = Directory.ls(submissionsDirectory).filter(p => p.getFileName.toString.startsWith("RS_"))
-
-  val fileSink = FileIO.toPath(Paths.get(fileOut))
-  val countSink = Sink.fold[Int, ByteString](0)((acc, _) => acc + 1)
-
-  val (eventualResult, countResult) = filesSource
-    .flatMapMerge(numberOfThreads, file => {
-      println(file)
-
-      getCompressorInputStreamSource(file.toString)
-        .via(Flows.ndJsonToObj(ModelEntity.SubmissionEntity)).async
-        .via(Flows.objectToCsv)
-    })
-    .alsoToMat(fileSink)(Keep.right)
-    .toMat(countSink)(Keep.both)
-    .run()
-
-  println("rpipe is ready to be read.")
-
-  implicit val ec: ExecutionContextExecutor = system.dispatcher
-  eventualResult.onComplete {
-    case util.Success(_) =>
-      println("Pipeline finished successfully.")
-      completeAndTerminate()
-    case util.Failure(e) =>
-      println(s"Pipeline failed with $e")
-      completeAndTerminate()
-  }
-
-  val count = Await.result(countResult, 365.days)
-  println(f"Count: $count")
-
-
+  // Stop actor system
+  completeAndTerminate()
 
   def completeAndTerminate(): Unit ={
-    // ToDo: remove duplicate date log?
     val duration = (System.nanoTime - startTime) / 1e9d
-    println(duration)
-
+    print(f"Finished after: $duration")
     system.terminate()
-    val durationTerminated = (System.nanoTime - startTime) / 1e9d
-    print("terminated after: ")
-    println(durationTerminated)
-  }
-
-  @throws[FileNotFoundException]
-  @throws[CompressorException]
-  def getCompressorInputStreamSource(fileName: String): Source[ByteString, Future[IOResult]] = {
-    val fileInputStream = new FileInputStream(new File(fileName))
-    val bufferedInputStream = new BufferedInputStream(fileInputStream)
-    val compressionName = CompressorStreamFactory.detect(bufferedInputStream)
-    val compressorInputStream = new CompressorStreamFactory()
-      .createCompressorInputStream(compressionName, bufferedInputStream, true)
-    StreamConverters.fromInputStream(() => compressorInputStream)
   }
 }

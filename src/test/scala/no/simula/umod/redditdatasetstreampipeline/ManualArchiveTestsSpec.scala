@@ -16,7 +16,7 @@ import scala.concurrent.Await
 
 @Ignore // Only for manual bug search
 class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
-    implicit val system = ActorSystem("Test")
+    implicit val system: ActorSystem = ActorSystem("Test")
 
     override protected def after(fun: => Any)(implicit pos: Position): Unit = system.terminate()
 
@@ -33,8 +33,8 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
       .toMat(countSink)(Keep.both)
       .run()
 
-    Await.result(result, 300.seconds);
-    val numb = Await.result(num, 300.seconds);
+    Await.result(result, 300.seconds)
+    val numb = Await.result(num, 300.seconds)
 
     assert(numb == 168227)
     println(numb)
@@ -43,7 +43,7 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
 
   "jsonParser" should "be able to parse the whole compressed file" in {
     val path = "C:\\import\\RS_v2_2008-03.xz"
-    val compSource = Main.getCompressorInputStreamSource(path)
+    val compSource = Flows.getCompressorInputStreamSource(path)
 
     val doNothingSink = Sink.foreach(DoNothing.doNothing)
     val countSink = Sink.fold[Int, ToCsv](0)((acc, _) => acc + 1)
@@ -55,8 +55,8 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
       .toMat(countSink)(Keep.both)
       .run()
 
-    Await.result(result, 300.seconds);
-    val numb = Await.result(num, 300.seconds);
+    Await.result(result, 300.seconds)
+    val numb = Await.result(num, 300.seconds)
 
     assert(numb == 168227)
     println(numb)
@@ -67,7 +67,7 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
     val input = "C:\\import\\RS_v2_2008-03.xz"
     val output = "C:\\_\\RS_v2_2008-03.out.ndjson"
 
-    val compSource = Main.getCompressorInputStreamSource(input)
+    val compSource = Flows.getCompressorInputStreamSource(input)
 
 
 
@@ -76,7 +76,7 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
     val resultFuture = compSource
       .runWith(fileSink)
 
-    val res = Await.result(resultFuture, 300.seconds);
+    Await.result(resultFuture, 300.seconds)
 
     // Remarks: This fails - wc of this file is lower than the original
     //   168227   1458212 239138694 RS_v2_2008-03
@@ -135,6 +135,7 @@ class ManualArchiveTestsSpec extends AnyFlatSpec with BeforeAndAfter {
 }
 
 object DoNothing{
+  //noinspection ScalaUnusedSymbol
   def doNothing(x : Any): Unit ={
 
   }
