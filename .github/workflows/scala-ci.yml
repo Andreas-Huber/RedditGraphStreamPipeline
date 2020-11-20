@@ -21,8 +21,3 @@ jobs:
       run: sbt test
     - name: Build Zip Package witha all dependencies
       run: sbt universal:packageBin
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: redditdatasetstreampipeline.zip
-        path: target/universal/redditdatasetstreampipeline-0.1.zip

@@ -19,7 +19,7 @@ object Main extends App {
       programName("redditdatasetstreampipeline"),
       head("Reddit Dataset Stream Pipeline", "0.1"),
 
-      opt[File]('d', "dataset-dir")
+      opt[File]('i', "dataset-dir")
         .valueName("<directory>")
         .action((x, c) => c.copy(datasetDirectory = x))
         .text("Dataset directory that contains the submissions and comments folder. Default value: 'redditdataset'."),
