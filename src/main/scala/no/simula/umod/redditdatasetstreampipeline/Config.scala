@@ -20,6 +20,8 @@ case class Config (
                     provideCommentsStream: Boolean = false,
                     submissionsOutFile: File = new File("submissions.csv"),
                     commentsOutFile: File = new File("comments.csv"),
+                    enableCount: Boolean = false,
+                    fileNameContainsFilter: String = "",
 
                     // Statistics options
                     experiment: Experiment = Experiment.None
