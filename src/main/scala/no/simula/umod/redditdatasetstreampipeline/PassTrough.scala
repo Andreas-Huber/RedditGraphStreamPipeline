@@ -33,13 +33,14 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
 
   /**
    * Runs the pipeline for the given entity and directory (comments or submissions)
+   * and counts the results
    * @param subdirectory comments or submissions directory
    * @param filePrefix Prefix of the archive files (RS_ or RC_)
    * @param entityType Model to deserialize.
    * @param outFile Output file or named pipe.
    * @return
    */
-  private def datasetPipe(subdirectory: String, filePrefix: String, entityType: ModelEntity, outFile: File): (Future[IOResult], Future[Int]) = {
+  private def datasetPipeAndCount(subdirectory: String, filePrefix: String, entityType: ModelEntity, outFile: File): (Future[IOResult], Future[Int]) = {
     val inputDirectory = Paths.get(config.datasetDirectory.getAbsolutePath, subdirectory)
 
     println(f"PassTrough entity: ${entityType.toString}")
@@ -69,6 +70,40 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
     (eventualResult, countResult)
   }
 
+  /**
+   * Runs the pipeline for the given entity and directory (comments or submissions)
+   * @param subdirectory comments or submissions directory
+   * @param filePrefix Prefix of the archive files (RS_ or RC_)
+   * @param entityType Model to deserialize.
+   * @param outFile Output file or named pipe.
+   * @return
+   */
+  private def datasetPipe(subdirectory: String, filePrefix: String, entityType: ModelEntity, outFile: File): Future[IOResult] = {
+    val inputDirectory = Paths.get(config.datasetDirectory.getAbsolutePath, subdirectory)
+
+    println(f"PassTrough entity: ${entityType.toString}")
+    println(f"InputDirectory: $inputDirectory")
+
+    val filesSource: Source[Path, NotUsed] = Directory.ls(inputDirectory).filter(p => p.getFileName.toString.startsWith(filePrefix))
+
+    val fileSink = FileIO.toPath(outFile.toPath)
+
+    val eventualResult = filesSource
+      .flatMapMerge(numberOfThreads, file => {
+        println(file)
+
+        Flows.getCompressorInputStreamSource(file.toString)
+          .via(Flows.ndJsonToObj(entityType)).async // todo: remove!?
+          .via(Flows.objectToCsv)
+      })
+      .runWith(fileSink)
+
+
+    println(f"Out pipe is ready to be read: $outFile")
+
+    eventualResult
+  }
+
   /** Runs the pass trough with the given options and waits for it's completion. */
   def runPassTrough() {
 
@@ -81,28 +116,40 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
 
     // Start the pipelines async
     if(config.provideCommentsStream){
-      val (result, countResult)  = datasetPipe("comments", "RC_", CommentEntity, config.commentsOutFile)
-      commentsResult = result
-      commentsCountResult = countResult
+      if (config.enableCount){
+        val (result, countResult)  = datasetPipeAndCount("comments", "RC_", CommentEntity, config.commentsOutFile)
+        commentsResult = result
+        commentsCountResult = countResult
+      } else {
+        commentsResult = datasetPipe("comments", "RC_", CommentEntity, config.commentsOutFile)
+      }
     }
 
     if(config.provideSubmissionsStream){
-      val (result, countResult)  = datasetPipe("submissions", "RS_", SubmissionEntity, config.submissionsOutFile)
-      submissionResult = result
-      submissionCountResult = countResult
+      if(config.enableCount){
+        val (result, countResult)  = datasetPipeAndCount("submissions", "RS_", SubmissionEntity, config.submissionsOutFile)
+        submissionResult = result
+        submissionCountResult = countResult
+      } else {
+        submissionResult = datasetPipe("submissions", "RS_", SubmissionEntity, config.submissionsOutFile)
+      }
     }
 
 
     // Wait for the results
     if(config.provideCommentsStream){
-      val count = Await.result(commentsCountResult, 365.days)
-      println(f"Count Comments: $count")
+      if(config.enableCount){
+        val count = Await.result(commentsCountResult, 365.days)
+        println(f"Count Comments: $count")
+      }
       Await.result(commentsResult, 365.days)
     }
 
     if(config.provideSubmissionsStream){
+      if(config.enableCount){
       val count = Await.result(submissionCountResult, 365.days)
       println(f"Count Submissions: $count")
+      }
       Await.result(submissionResult, 365.days)
     }
   }

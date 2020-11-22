@@ -46,12 +46,16 @@ object Main extends App {
             .action((_, c) => c.copy(provideCommentsStream = true))
             .text("Enables the comments output stream."),
 
-          opt[File]('x', "submissions-out")
+          opt[Unit]("count")
+            .action((_, c) => c.copy(enableCount = true))
+            .text("If enabled, the program counts the number of elements on the stream."),
+
+          opt[File]("submissions-out")
             .valueName("<file>")
             .action((x, c) => c.copy(submissionsOutFile = x))
             .text("File or named pipe where to write the submissions csv to. Default value: 'submissions.csv'"),
 
-          opt[File]('z', "comments-out")
+          opt[File]("comments-out")
             .valueName("<file>")
             .action((x, c) => c.copy(commentsOutFile = x))
             .text("File or named pipe where to write the comments csv to. Default value: 'comments.csv'"),
