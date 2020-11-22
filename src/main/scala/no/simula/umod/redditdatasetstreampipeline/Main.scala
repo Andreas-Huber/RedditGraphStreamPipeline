@@ -50,6 +50,11 @@ object Main extends App {
             .action((_, c) => c.copy(enableCount = true))
             .text("If enabled, the program counts the number of elements on the stream."),
 
+          opt[String]("filter")
+            .valueName("<filter>")
+            .action((x, c) => c.copy(fileNameContainsFilter = x))
+            .text("File name contains filter."),
+
           opt[File]("submissions-out")
             .valueName("<file>")
             .action((x, c) => c.copy(submissionsOutFile = x))

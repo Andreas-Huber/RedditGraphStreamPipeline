@@ -47,7 +47,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
     println(f"InputDirectory: $inputDirectory")
 
 
-    val filesSource: Source[Path, NotUsed] = Directory.ls(inputDirectory).filter(p => p.getFileName.toString.startsWith(filePrefix))
+    val filesSource: Source[Path, NotUsed] = Directory.ls(inputDirectory).filter(p => filterFiles(filePrefix, p))
 
     val fileSink = FileIO.toPath(outFile.toPath)
     val countSink = Sink.fold[Int, ByteString](0)((acc, _) => acc + 1)
@@ -70,8 +70,15 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
     (eventualResult, countResult)
   }
 
+  private def filterFiles(filePrefix: String, p: Path) = {
+    val fileName = p.getFileName.toString
+
+    fileName.startsWith(filePrefix) && fileName.contains(config.fileNameContainsFilter)
+  }
+
   /**
    * Runs the pipeline for the given entity and directory (comments or submissions)
+   *
    * @param subdirectory comments or submissions directory
    * @param filePrefix Prefix of the archive files (RS_ or RC_)
    * @param entityType Model to deserialize.
@@ -84,7 +91,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
     println(f"PassTrough entity: ${entityType.toString}")
     println(f"InputDirectory: $inputDirectory")
 
-    val filesSource: Source[Path, NotUsed] = Directory.ls(inputDirectory).filter(p => p.getFileName.toString.startsWith(filePrefix))
+    val filesSource: Source[Path, NotUsed] = Directory.ls(inputDirectory).filter(p => filterFiles(filePrefix, p))
 
     val fileSink = FileIO.toPath(outFile.toPath)
 
