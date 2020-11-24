@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets
 import akka.NotUsed
 import akka.stream.IOResult
 import akka.stream.alpakka.csv.scaladsl.{CsvFormatting, CsvQuotingStyle}
-import akka.stream.scaladsl.{Flow, JsonFraming, Source, StreamConverters}
+import akka.stream.scaladsl.{Flow, Framing, JsonFraming, Source, StreamConverters}
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.ModelEntity
@@ -22,8 +22,13 @@ object Flows {
    * Takes NdJson ByteStrings and converts them to the provided Entity
    */
   def ndJsonToObj(entity: ModelEntity) : Flow[ByteString, ToCsv, NotUsed] = {
+    val nullByte : Byte = 0;
     val f = Flow[ByteString]
-      .via(JsonFraming.objectScanner(Int.MaxValue))
+     .via(Framing.delimiter( //chunk the inputs up into actual lines of text
+       ByteString("\n"),
+         maximumFrameLength = Int.MaxValue,
+         allowTruncation = true))
+      .filter(_.head != 0)
 
     entity match {
       case ModelEntity.SubmissionEntity => f.map(_.utf8String.parseJson.convertTo[Submission])

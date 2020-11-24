@@ -57,7 +57,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
         println(file)
 
         Flows.getCompressorInputStreamSource(file.toString)
-          .via(Flows.ndJsonToObj(entityType)).async // todo: remove!?
+          .via(Flows.ndJsonToObj(entityType))//.async // todo: remove!?
           .via(Flows.objectToCsv)
       })
       .alsoToMat(fileSink)(Keep.right)
@@ -100,7 +100,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
         println(file)
 
         Flows.getCompressorInputStreamSource(file.toString)
-          .via(Flows.ndJsonToObj(entityType)).async // todo: remove!?
+          .via(Flows.ndJsonToObj(entityType))//.async // todo: remove!?
           .via(Flows.objectToCsv)
       })
       .runWith(fileSink)
