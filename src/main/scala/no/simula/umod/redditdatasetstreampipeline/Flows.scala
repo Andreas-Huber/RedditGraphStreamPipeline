@@ -2,7 +2,6 @@ package no.simula.umod.redditdatasetstreampipeline
 
 import java.io.{BufferedInputStream, File, FileInputStream, FileNotFoundException}
 import java.nio.charset.StandardCharsets
-
 import akka.NotUsed
 import akka.stream.IOResult
 import akka.stream.alpakka.csv.scaladsl.{CsvFormatting, CsvQuotingStyle}
@@ -10,7 +9,7 @@ import akka.stream.scaladsl.{Flow, Framing, JsonFraming, Source, StreamConverter
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.ModelEntity
-import no.simula.umod.redditdatasetstreampipeline.model.{Comment, ModelEntity, Submission, ToCsv}
+import no.simula.umod.redditdatasetstreampipeline.model.{Author, Comment, ModelEntity, Submission, ToCsv}
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 import spray.json._
 
@@ -33,6 +32,7 @@ object Flows {
     entity match {
       case ModelEntity.SubmissionEntity => f.map(_.utf8String.parseJson.convertTo[Submission])
       case ModelEntity.CommentEntity => f.map(_.utf8String.parseJson.convertTo[Comment])
+      case ModelEntity.AuthorEntity => f.map(_.utf8String.parseJson.convertTo[Author])
       case _ => throw new NotImplementedError("ndJson for this type is not implemented.")
     }
   }

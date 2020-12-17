@@ -120,6 +120,9 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
     var commentsResult: Future[IOResult] = Future.never
     var commentsCountResult: Future[Int] = Future.never
 
+    var authorsResult: Future[IOResult] = Future.never
+    var authorsCountResult: Future[Int] = Future.never
+
 
     // Start the pipelines async
     if(config.provideCommentsStream){
@@ -142,6 +145,16 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
       }
     }
 
+    if(config.provideAuthorsStream){
+      if (config.enableCount){
+        val (result, countResult)  = datasetPipeAndCount("authors", "RA_2020-06-28.ndjson.zst", CommentEntity, config.authorsOutFile)
+        authorsResult = result
+        authorsCountResult = countResult
+      } else {
+        authorsResult = datasetPipe("authors", "RA_2020-06-28.ndjson.zst", CommentEntity, config.authorsOutFile)
+      }
+    }
+
 
     // Wait for the results
     if(config.provideCommentsStream){
@@ -158,6 +171,14 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
       println(f"Count Submissions: $count")
       }
       Await.result(submissionResult, 365.days)
+    }
+
+    if(config.provideAuthorsStream){
+      if(config.enableCount){
+        val count = Await.result(authorsCountResult, 365.days)
+        println(f"Count Authors: $count")
+      }
+      Await.result(authorsResult, 365.days)
     }
   }
 }

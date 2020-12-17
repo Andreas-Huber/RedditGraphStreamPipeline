@@ -18,8 +18,10 @@ case class Config (
                     // Pass trough options
                     provideSubmissionsStream: Boolean = false,
                     provideCommentsStream: Boolean = false,
+                    provideAuthorsStream: Boolean = false,
                     submissionsOutFile: File = new File("submissions.csv"),
                     commentsOutFile: File = new File("comments.csv"),
+                    authorsOutFile: File = new File("authors.csv"),
                     enableCount: Boolean = false,
                     fileNameContainsFilter: String = "",
 

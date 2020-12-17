@@ -46,6 +46,10 @@ object Main extends App {
             .action((_, c) => c.copy(provideCommentsStream = true))
             .text("Enables the comments output stream."),
 
+          opt[Unit]('a', "authors")
+            .action((_, c) => c.copy(provideAuthorsStream = true))
+            .text("Enables the Authors output stream."),
+
           opt[Unit]("count")
             .action((_, c) => c.copy(enableCount = true))
             .text("If enabled, the program counts the number of elements on the stream."),
@@ -64,6 +68,11 @@ object Main extends App {
             .valueName("<file>")
             .action((x, c) => c.copy(commentsOutFile = x))
             .text("File or named pipe where to write the comments csv to. Default value: 'comments.csv'"),
+
+          opt[File]("authors-out")
+            .valueName("<file>")
+            .action((x, c) => c.copy(authorsOutFile = x))
+            .text("File or named pipe where to write the authors csv to. Default value: 'authors.csv'"),
         ),
 
       cmd("statistics")
@@ -86,8 +95,9 @@ object Main extends App {
       config.programMode match {
 
         case ProgramMode.PassTrough =>
-          if(!config.provideSubmissionsStream && !config.provideCommentsStream){
-            println("Neither '--submissions' nor '--comments' option enabled. No output will be generated.")
+          if(!config.provideSubmissionsStream && !config.provideCommentsStream && !config.provideAuthorsStream){
+            println("No stream enabled. No output will be generated.")
+            println("Add the '--submissions', '--comments' or '--authors' option.")
             exit(1)
           }
 
