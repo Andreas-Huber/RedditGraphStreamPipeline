@@ -2,14 +2,13 @@ package no.simula.umod.redditdatasetstreampipeline
 
 import java.io.File
 import java.nio.file.{Path, Paths}
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.IOResult
 import akka.stream.alpakka.file.scaladsl.Directory
 import akka.stream.scaladsl.{FileIO, Keep, Sink, Source}
 import akka.util.ByteString
-import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.{CommentEntity, ModelEntity, SubmissionEntity}
+import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.{AuthorEntity, CommentEntity, ModelEntity, SubmissionEntity}
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -147,11 +146,11 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
 
     if(config.provideAuthorsStream){
       if (config.enableCount){
-        val (result, countResult)  = datasetPipeAndCount("authors", "RA_2020-06-28.ndjson.zst", CommentEntity, config.authorsOutFile)
+        val (result, countResult)  = datasetPipeAndCount("authors", "RA_2020-06-28.ndjson.zst", AuthorEntity, config.authorsOutFile)
         authorsResult = result
         authorsCountResult = countResult
       } else {
-        authorsResult = datasetPipe("authors", "RA_2020-06-28.ndjson.zst", CommentEntity, config.authorsOutFile)
+        authorsResult = datasetPipe("authors", "RA_2020-06-28.ndjson.zst", AuthorEntity, config.authorsOutFile)
       }
     }
 

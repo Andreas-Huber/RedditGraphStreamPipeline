@@ -3,7 +3,7 @@ package no.simula.umod.redditdatasetstreampipeline
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import no.simula.umod.redditdatasetstreampipeline.model.{ModelEntity, Submission}
+import no.simula.umod.redditdatasetstreampipeline.model.{Author, ModelEntity, Submission}
 import org.scalactic.source.Position
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
@@ -101,6 +101,19 @@ class FlowsSpec extends AnyFlatSpec with BeforeAndAfter {
 
     val res = Await.result(result, 3.seconds)
     assert(res.head === "Cats,555,ALF,Melmacs-best-cat-recipes.\n")
+
+  }
+
+  "objectToCsv" should "should convert Authos to CSV ByteStrings" in {
+    val conv = Flows.objectToCsv
+
+    val result = Source.single(Author(1609692958))
+      .via(conv)
+      .map(_.utf8String)
+      .runWith(Sink.seq)
+
+    val res = Await.result(result, 3.seconds)
+    assert(res.head === "1609692958\n")
 
   }
 }
