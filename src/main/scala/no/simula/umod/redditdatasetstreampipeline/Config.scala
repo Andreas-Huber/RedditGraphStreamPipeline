@@ -26,7 +26,8 @@ case class Config (
                     fileNameContainsFilter: String = "",
 
                     // Statistics options
-                    experiment: Experiment = Experiment.None
+                    experiment: Experiment = Experiment.None,
+                    statisticsOutDir: File = new File(System.getProperty("user.home"))
 )
 
 object ProgramMode extends Enumeration {
@@ -36,6 +37,6 @@ object ProgramMode extends Enumeration {
 
 object Experiment extends Enumeration {
   type Experiment = Value
-  val None, UserCount = Value
+  val None, UsersInSubreddits = Value
 }
 

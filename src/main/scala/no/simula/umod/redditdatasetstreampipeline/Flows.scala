@@ -21,13 +21,12 @@ object Flows {
    * Takes NdJson ByteStrings and converts them to the provided Entity
    */
   def ndJsonToObj(entity: ModelEntity) : Flow[ByteString, ToCsv, NotUsed] = {
-    val nullByte : Byte = 0;
     val f = Flow[ByteString]
      .via(Framing.delimiter( //chunk the inputs up into actual lines of text
        ByteString("\n"),
          maximumFrameLength = Int.MaxValue,
          allowTruncation = true))
-      .filter(_.head != 0)
+      .filter(_.head != 0) // Remove lines with null bytes
 
     entity match {
       case ModelEntity.SubmissionEntity => f.map(_.utf8String.parseJson.convertTo[Submission])
@@ -40,15 +39,13 @@ object Flows {
   /**
    * Takes NdJson ByteStrings and converts them to Submission objects
    */
-  val ndJsonToSubmission: Flow[ByteString, ToCsv, NotUsed] = Flow[ByteString]
-    // .via(Framing.delimiter( //chunk the inputs up into actual lines of text
-    //   ByteString("\n"),
-    //     maximumFrameLength = Int.MaxValue,
-    //     allowTruncation = true))
-    // Possible but costlier alternative to new lines would be
-    // To scan the stream for json objects
-    .via(JsonFraming.objectScanner(Int.MaxValue))
-    .map(_.utf8String.parseJson.convertTo[Submission](submissionFormat)) // Create json objects
+  val ndJsonToSubmission: Flow[ByteString, Submission, NotUsed] = Flow[ByteString]
+    .via(Framing.delimiter( //chunk the inputs up into actual lines of text
+      ByteString("\n"),
+      maximumFrameLength = Int.MaxValue,
+      allowTruncation = true))
+    .filter(_.head != 0) // Remove lines with null bytes
+    .map(_.utf8String.parseJson.convertTo[Submission](submissionFormat)) // Deserialize json to Submission
 
 
   /**
