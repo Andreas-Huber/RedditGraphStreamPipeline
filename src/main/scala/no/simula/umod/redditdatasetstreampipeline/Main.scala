@@ -79,9 +79,9 @@ object Main extends App {
         .action((_, c) => c.copy(programMode = ProgramMode.Statistics))
         .text("Runs the program in statistics mode.")
         .children(
-          cmd("usersinsubreddits")
-            .action((_, c) => c.copy(experiment = Experiment.UsersInSubreddits))
-            .text("Experiment to count the subreddits with the most users that commented or posted.")
+          cmd("UserContributionsInSubreddits")
+            .action((_, c) => c.copy(experiment = Experiment.UserContributionsInSubreddits))
+            .text("Experiment to count the contributions users made in subreddits. A contribution is a post or comment.")
         ),
     )
   }
@@ -110,7 +110,7 @@ object Main extends App {
 
           // Select experiment
           config.experiment match {
-            case Experiment.UsersInSubreddits => statistics.runUsersInSubreddits(config.experiment)
+            case Experiment.UserContributionsInSubreddits => statistics.runUserContributionsInSubreddits(config.experiment)
             case _ =>
               println("Experiment not implemented yet.")
               exit(1)

@@ -9,7 +9,7 @@ import akka.stream.scaladsl.{Flow, Framing, JsonFraming, Source, StreamConverter
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.ModelEntity
-import no.simula.umod.redditdatasetstreampipeline.model.{Author, Comment, ModelEntity, Submission, ToCsv}
+import no.simula.umod.redditdatasetstreampipeline.model.{Author, Comment, ModelEntity, Submission, ToCsv, UserInSubreddit}
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 import spray.json._
 
@@ -21,31 +21,40 @@ object Flows {
    * Takes NdJson ByteStrings and converts them to the provided Entity
    */
   def ndJsonToObj(entity: ModelEntity) : Flow[ByteString, ToCsv, NotUsed] = {
-    val f = Flow[ByteString]
-     .via(Framing.delimiter( //chunk the inputs up into actual lines of text
-       ByteString("\n"),
-         maximumFrameLength = Int.MaxValue,
-         allowTruncation = true))
-      .filter(_.head != 0) // Remove lines with null bytes
-
     entity match {
-      case ModelEntity.SubmissionEntity => f.map(_.utf8String.parseJson.convertTo[Submission])
-      case ModelEntity.CommentEntity => f.map(_.utf8String.parseJson.convertTo[Comment])
-      case ModelEntity.AuthorEntity => f.map(_.utf8String.parseJson.convertTo[Author])
+      case ModelEntity.SubmissionEntity => splitLines.map(_.utf8String.parseJson.convertTo[Submission])
+      case ModelEntity.CommentEntity => splitLines.map(_.utf8String.parseJson.convertTo[Comment])
+      case ModelEntity.AuthorEntity => splitLines.map(_.utf8String.parseJson.convertTo[Author])
       case _ => throw new NotImplementedError("ndJson for this type is not implemented.")
     }
   }
 
-  /**
-   * Takes NdJson ByteStrings and converts them to Submission objects
-   */
-  val ndJsonToSubmission: Flow[ByteString, Submission, NotUsed] = Flow[ByteString]
+  val splitLines: Flow[ByteString, ByteString, NotUsed] = Flow[ByteString]
     .via(Framing.delimiter( //chunk the inputs up into actual lines of text
       ByteString("\n"),
       maximumFrameLength = Int.MaxValue,
       allowTruncation = true))
     .filter(_.head != 0) // Remove lines with null bytes
-    .map(_.utf8String.parseJson.convertTo[Submission](submissionFormat)) // Deserialize json to Submission
+  
+  /**
+   * Takes NdJson ByteStrings and converts them to Submission objects
+   */
+  val ndJsonToSubmission: Flow[ByteString, Submission, NotUsed] = Flow[ByteString]
+    .via(splitLines)
+    // Deserialize json to Submission
+    .map(_.utf8String.parseJson.convertTo[Submission](submissionFormat))
+
+  /**
+   * Takes NdJson ByteStrings and converts them to Submission objects
+   */
+  val ndJsonToUserInSubreddit: Flow[ByteString, UserInSubreddit, NotUsed] = Flow[ByteString]
+    .via(splitLines)
+    // Deserialize json to UserInSubreddit
+    .map(_.utf8String.parseJson.convertTo[UserInSubreddit](userInSubredditFormat))
+
+  /**
+   * Splits the lines of the incoming stream and filters out lines with NULL bytes
+   */
 
 
   /**
