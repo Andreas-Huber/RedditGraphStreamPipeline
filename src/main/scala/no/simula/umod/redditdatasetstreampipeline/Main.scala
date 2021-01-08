@@ -79,9 +79,9 @@ object Main extends App {
         .action((_, c) => c.copy(programMode = ProgramMode.Statistics))
         .text("Runs the program in statistics mode.")
         .children(
-          cmd("usercount")
-            .action((_, c) => c.copy(experiment = Experiment.UserCount))
-            .text("Experiment to count the users that commented or posted.")
+          cmd("UserContributionsInSubreddits")
+            .action((_, c) => c.copy(experiment = Experiment.UserContributionsInSubreddits))
+            .text("Experiment to count the contributions users made in subreddits. A contribution is a post or comment.")
         ),
     )
   }
@@ -106,10 +106,11 @@ object Main extends App {
 
         case ProgramMode.Statistics =>
           println(f"Experiment: ${config.experiment}")
+          val statistics = new Statistics(system, config)
 
           // Select experiment
           config.experiment match {
-            case Experiment.UserCount => println("matched user count")
+            case Experiment.UserContributionsInSubreddits => statistics.runUserContributionsInSubreddits(config.experiment)
             case _ =>
               println("Experiment not implemented yet.")
               exit(1)

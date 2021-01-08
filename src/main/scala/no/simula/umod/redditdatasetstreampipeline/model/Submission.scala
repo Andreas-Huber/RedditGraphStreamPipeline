@@ -20,6 +20,14 @@ case class Submission(
     "author",
     "title"
   )
+
+  def isEndOfStream(): Boolean = subreddit.isEmpty && id.isEmpty && author.isEmpty
+}
+
+object SubmissionFactory {
+
+  def endOfStream() = Submission(None, None, None, None)
+
 }
 
 /*
