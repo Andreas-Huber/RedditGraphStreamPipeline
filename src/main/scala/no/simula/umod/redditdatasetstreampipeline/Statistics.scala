@@ -64,7 +64,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
         { element =>
           if (element.author.isDefined) {
             // Add or update count per subreddit
-            subreddits.updateWith(element.subreddit.get)({
+            subreddits.updateWith(element.subreddit.getOrElse("No-Subreddit-defined"))({
               case Some(count) => Some(count + 1)
               case None        => Some(1)
             })
