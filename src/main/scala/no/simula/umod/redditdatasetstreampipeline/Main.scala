@@ -2,6 +2,7 @@ package no.simula.umod.redditdatasetstreampipeline
 
 import java.io.File
 import akka.actor.ActorSystem
+import com.typesafe.config.ConfigFactory
 import no.simula.umod.redditdatasetstreampipeline.ConsoleTools.log
 import scopt.OParser
 
@@ -11,6 +12,15 @@ import scala.sys.exit
 object Main extends App {
 
   val startTime = System.nanoTime
+
+//  // akka configuration
+//  akka.actor.default-dispatcher.fork-join-executor
+
+
+  val config = ConfigFactory.load()
+
+  
+
   implicit val system: ActorSystem = ActorSystem("ReadArchives")
 
   val builder = OParser.builder[Config]
@@ -21,12 +31,12 @@ object Main extends App {
       head("Reddit Dataset Stream Pipeline", "0.1"),
 
       opt[File]('i', "dataset-dir")
-        .valueName("<directory>")
+        .valueName("<dir>")
         .action((x, c) => c.copy(datasetDirectory = x))
         .text("Dataset directory that contains the submissions and comments folder. Default value: 'redditdataset'."),
 
-      opt[Int]('p', "concurrent-files")
-        .valueName("<number 1 to n>")
+      opt[Int]('p', "parallel")
+        .valueName("<n>")
         .action((x, c) => c.copy(numberOfConcurrentFiles = x))
         .validate(x =>
           if (x > 0) success
@@ -60,17 +70,17 @@ object Main extends App {
             .action((_, c) => c.copy(enableCount = true))
             .text("If enabled, the program counts the number of elements on the stream."),
 
-          opt[File]("submissions-out")
+          opt[File]("submission-out")
             .valueName("<file>")
             .action((x, c) => c.copy(submissionsOutFile = x))
             .text("File or named pipe where to write the submissions csv to. Default value: 'submissions.csv'"),
 
-          opt[File]("comments-out")
+          opt[File]("comment-out")
             .valueName("<file>")
             .action((x, c) => c.copy(commentsOutFile = x))
             .text("File or named pipe where to write the comments csv to. Default value: 'comments.csv'"),
 
-          opt[File]("authors-out")
+          opt[File]("author-out")
             .valueName("<file>")
             .action((x, c) => c.copy(authorsOutFile = x))
             .text("File or named pipe where to write the authors csv to. Default value: 'authors.csv'"),
@@ -79,11 +89,18 @@ object Main extends App {
       cmd("statistics")
         .action((_, c) => c.copy(programMode = ProgramMode.Statistics))
         .text("Runs the program in statistics mode.")
+
         .children(
           cmd("UserContributionsInSubreddits")
             .action((_, c) => c.copy(experiment = Experiment.UserContributionsInSubreddits))
-            .text("Experiment to count the contributions users made in subreddits. A contribution is a post or comment.")
+            .text("Experiment to count the contributions users made in subreddits. A contribution is a post or comment."),
+
+          opt[File]("statistics-out")
+            .valueName("<dir>")
+            .action((x, c) => c.copy(commentsOutFile = x))
+            .text("Directory where the results of the experiments shall be written to. Default value: '~'"),
         ),
+
     )
   }
 

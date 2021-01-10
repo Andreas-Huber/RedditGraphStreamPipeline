@@ -38,7 +38,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
   /** Counts the experiment to count the contributions users made in subreddits. A contribution is a post or comment. */
   def runUserContributionsInSubreddits(experiment: Experiment) {
 
-    val outFile = Paths.get(config.statisticsOutDir.getAbsolutePath, s"$experiment.txt").toFile
+    val outFile = Paths.get(config.statisticsOutDir.getAbsolutePath, s"$experiment.csv").toFile
     println(s"Writing to file:    $outFile")
 
     // Input
