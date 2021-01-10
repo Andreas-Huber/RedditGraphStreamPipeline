@@ -124,8 +124,6 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
     // Wait for the results
     Await.result(eventualResult, 365.days)
   }
-
-
 }
 
 

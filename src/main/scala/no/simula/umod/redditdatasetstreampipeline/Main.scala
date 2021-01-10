@@ -32,6 +32,11 @@ object Main extends App {
           else failure("Value <number> must be > 0"))
         .text("Number of how many files should be read concurrently."),
 
+      opt[String]("filter")
+        .valueName("<filter>")
+        .action((x, c) => c.copy(fileNameContainsFilter = x))
+        .text("File name contains filter."),
+
       help("help").text("prints this usage text"),
 
       cmd("passtrough")
@@ -53,11 +58,6 @@ object Main extends App {
           opt[Unit]("count")
             .action((_, c) => c.copy(enableCount = true))
             .text("If enabled, the program counts the number of elements on the stream."),
-
-          opt[String]("filter")
-            .valueName("<filter>")
-            .action((x, c) => c.copy(fileNameContainsFilter = x))
-            .text("File name contains filter."),
 
           opt[File]("submissions-out")
             .valueName("<file>")
