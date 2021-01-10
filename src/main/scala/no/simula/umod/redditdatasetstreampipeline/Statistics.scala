@@ -6,12 +6,15 @@ import akka.stream.IOResult
 import akka.stream.alpakka.file.scaladsl.Directory
 import akka.stream.scaladsl.{FileIO, Flow, Keep, Sink, Source}
 import akka.util.ByteString
+import no.simula.umod.redditdatasetstreampipeline.ConsoleTools.log
 import no.simula.umod.redditdatasetstreampipeline.Experiment.Experiment
 import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.{AuthorEntity, CommentEntity, ModelEntity, SubmissionEntity}
 import no.simula.umod.redditdatasetstreampipeline.model.{CountPerSubreddit, CountPerSubredditFactory, Submission, SubmissionFactory, ToCsv, UserInSubreddit, UserInSubredditFactory}
 
 import java.io.File
 import java.nio.file.{Path, Paths}
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import scala.::
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -32,16 +35,15 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
     fileName.startsWith(filePrefix) && fileName.contains(config.fileNameContainsFilter)
   }
 
-
   /** Counts the experiment to count the contributions users made in subreddits. A contribution is a post or comment. */
   def runUserContributionsInSubreddits(experiment: Experiment) {
 
     val outFile = Paths.get(config.statisticsOutDir.getAbsolutePath, s"$experiment.txt").toFile
-    println(s"Writing to file: $outFile")
+    println(s"Writing to file:    $outFile")
 
     // Input
     val datasetDirectory = config.datasetDirectory.getAbsolutePath
-    println(f"InputDirectory: ${datasetDirectory.toString}")
+    println(f"InputDirectory:     ${datasetDirectory}")
 
     val submissionsDirectory = Paths.get(datasetDirectory, "submissions")
     val commentsDirectory = Paths.get(datasetDirectory, "comments")
@@ -106,8 +108,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
     val eventualResult = filesSource
       .flatMapMerge(numberOfThreads, file => {
         // Flow per file from here
-        println(file)
-
+        log(file)
 
         Flows.getCompressorInputStreamSource(file.toString)
           .via(Flows.ndJsonToUserInSubreddit)
@@ -118,7 +119,8 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
       .via(Flows.objectToCsv)
       .runWith(fileSink)
 
-    println(f"Out pipe is ready to be read: $outFile")
+    println(f"Output is ready:    $outFile")
+    println("------------------------------------------")
 
 
     // Wait for the results

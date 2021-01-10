@@ -1,10 +1,11 @@
 package no.simula.umod.redditdatasetstreampipeline
 
 import java.io.File
-
 import akka.actor.ActorSystem
+import no.simula.umod.redditdatasetstreampipeline.ConsoleTools.log
 import scopt.OParser
 
+import java.util.Calendar
 import scala.sys.exit
 
 object Main extends App {
@@ -90,13 +91,15 @@ object Main extends App {
   OParser.parse(parser1, args, Config()) match {
     case Some(config) =>
 
-      println(f"Program mode: ${config.programMode}")
+      println(f"Program mode:       ${config.programMode}")
+      println(s"Started at:         ${Calendar.getInstance().getTime()}")
+      println(f"Dataset directory:  ${config.datasetDirectory}")
 
       config.programMode match {
 
         case ProgramMode.PassTrough =>
           if(!config.provideSubmissionsStream && !config.provideCommentsStream && !config.provideAuthorsStream){
-            println("No stream enabled. No output will be generated.")
+            println("Error: No stream enabled. No output will be generated.")
             println("Add the '--submissions', '--comments' or '--authors' option.")
             exit(1)
           }
@@ -105,19 +108,20 @@ object Main extends App {
           passTrough.runPassTrough()
 
         case ProgramMode.Statistics =>
-          println(f"Experiment: ${config.experiment}")
+
+          println(f"Experiment:         ${config.experiment}")
           val statistics = new Statistics(system, config)
 
           // Select experiment
           config.experiment match {
             case Experiment.UserContributionsInSubreddits => statistics.runUserContributionsInSubreddits(config.experiment)
             case _ =>
-              println("Experiment not implemented yet.")
+              println("Error: Experiment not implemented yet.")
               exit(1)
           }
 
         case _ =>
-          println("No program mode specified. Run the program with --help to see available commands.")
+          println("Error: No program mode specified. Run the program with --help to see available commands.")
           exit(1)
       }
     case _ =>
@@ -131,7 +135,7 @@ object Main extends App {
 
   def completeAndTerminate(): Unit ={
     val duration = (System.nanoTime - startTime) / 1e9d
-    print(f"Finished after: $duration")
+    log(f"Finished after: $duration seconds")
     system.terminate()
   }
 }

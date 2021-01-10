@@ -8,6 +8,7 @@ import akka.stream.IOResult
 import akka.stream.alpakka.file.scaladsl.Directory
 import akka.stream.scaladsl.{FileIO, Keep, Sink, Source}
 import akka.util.ByteString
+import no.simula.umod.redditdatasetstreampipeline.ConsoleTools.log
 import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.{AuthorEntity, CommentEntity, ModelEntity, SubmissionEntity}
 
 import scala.concurrent.duration.DurationInt
@@ -42,8 +43,8 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
   private def datasetPipeAndCount(subdirectory: String, filePrefix: String, entityType: ModelEntity, outFile: File): (Future[IOResult], Future[Int]) = {
     val inputDirectory = Paths.get(config.datasetDirectory.getAbsolutePath, subdirectory)
 
-    println(f"PassTrough entity: ${entityType.toString}")
-    println(f"InputDirectory: $inputDirectory")
+    println(f"PassTrough entity:  ${entityType.toString}")
+    println(f"InputDirectory:     $inputDirectory")
 
 
     val filesSource: Source[Path, NotUsed] = Directory.ls(inputDirectory).filter(p => filterFiles(filePrefix, p))
@@ -56,7 +57,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
         println(file)
 
         Flows.getCompressorInputStreamSource(file.toString)
-          .via(Flows.ndJsonToObj(entityType))//.async // todo: remove!?
+          .via(Flows.ndJsonToObj(entityType))
           .via(Flows.objectToCsv)
       })
       .alsoToMat(fileSink)(Keep.right)
@@ -96,7 +97,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
 
     val eventualResult = filesSource
       .flatMapMerge(numberOfThreads, file => {
-        println(file)
+        log(file)
 
         Flows.getCompressorInputStreamSource(file.toString)
           .via(Flows.ndJsonToObj(entityType))//.async // todo: remove!?
