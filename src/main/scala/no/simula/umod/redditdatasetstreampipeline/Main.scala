@@ -13,15 +13,12 @@ object Main extends App {
 
   val startTime = System.nanoTime
 
-//  // akka configuration
-//  akka.actor.default-dispatcher.fork-join-executor
+  val config = ConfigFactory.parseString(s"""
+      akka.actor.default-blocking-io-dispatcher.thread-pool-executor.fixed-pool-size = "128"
+      akka.actor.default-dispatcher.fork-join-executor.parallelism-max = "1024"
+    """).withFallback(ConfigFactory.load())
 
-
-  val config = ConfigFactory.load()
-
-  
-
-  implicit val system: ActorSystem = ActorSystem("ReadArchives")
+  implicit val system: ActorSystem = ActorSystem("ReadArchives", config)
 
   val builder = OParser.builder[Config]
   val parser1 = {

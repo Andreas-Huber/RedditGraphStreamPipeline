@@ -30,10 +30,11 @@ object Flows {
   }
 
   val splitLines: Flow[ByteString, ByteString, NotUsed] = Flow[ByteString]
-    .via(Framing.delimiter( //chunk the inputs up into actual lines of text
-      ByteString("\n"),
-      maximumFrameLength = Int.MaxValue,
-      allowTruncation = true))
+//    .via(Framing.delimiter( //chunk the inputs up into actual lines of text
+//      ByteString("\n"),
+//      maximumFrameLength = Int.MaxValue,
+//      allowTruncation = true))
+    .via(JsonFraming.objectScanner(Int.MaxValue))
     .filter(_.head != 0) // Remove lines with null bytes
   
   /**
