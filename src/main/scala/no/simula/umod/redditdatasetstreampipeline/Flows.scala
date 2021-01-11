@@ -1,18 +1,20 @@
 package no.simula.umod.redditdatasetstreampipeline
 
-import java.io.{BufferedInputStream, File, FileInputStream, FileNotFoundException}
-import java.nio.charset.StandardCharsets
 import akka.NotUsed
+import akka.stream.ActorAttributes.supervisionStrategy
 import akka.stream.IOResult
+import akka.stream.Supervision.resumingDecider
 import akka.stream.alpakka.csv.scaladsl.{CsvFormatting, CsvQuotingStyle}
-import akka.stream.scaladsl.{Flow, Framing, JsonFraming, Source, StreamConverters}
+import akka.stream.scaladsl.{Flow, Framing, Source, StreamConverters}
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.ModelEntity
-import no.simula.umod.redditdatasetstreampipeline.model.{Author, Comment, ModelEntity, Submission, ToCsv, UserInSubreddit}
+import no.simula.umod.redditdatasetstreampipeline.model._
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 import spray.json._
 
+import java.io.{BufferedInputStream, File, FileInputStream, FileNotFoundException}
+import java.nio.charset.StandardCharsets
 import scala.concurrent.Future
 
 object Flows {
@@ -23,20 +25,23 @@ object Flows {
   def ndJsonToObj(entity: ModelEntity) : Flow[ByteString, ToCsv, NotUsed] = {
     entity match {
       case ModelEntity.SubmissionEntity => splitLines.map(_.utf8String.parseJson.convertTo[Submission])
+        .withAttributes(supervisionStrategy(resumingDecider))
       case ModelEntity.CommentEntity => splitLines.map(_.utf8String.parseJson.convertTo[Comment])
+        .withAttributes(supervisionStrategy(resumingDecider))
       case ModelEntity.AuthorEntity => splitLines.map(_.utf8String.parseJson.convertTo[Author])
+        .withAttributes(supervisionStrategy(resumingDecider))
       case _ => throw new NotImplementedError("ndJson for this type is not implemented.")
     }
   }
 
   val splitLines: Flow[ByteString, ByteString, NotUsed] = Flow[ByteString]
-//    .via(Framing.delimiter( //chunk the inputs up into actual lines of text
-//      ByteString("\n"),
-//      maximumFrameLength = Int.MaxValue,
-//      allowTruncation = true))
-    .via(JsonFraming.objectScanner(Int.MaxValue))
+    .via(Framing.delimiter( //chunk the inputs up into actual lines of text
+      ByteString("\n"),
+      maximumFrameLength = Int.MaxValue,
+      allowTruncation = true))
     .filter(_.head != 0) // Remove lines with null bytes
-  
+
+
   /**
    * Takes NdJson ByteStrings and converts them to Submission objects
    */
@@ -44,6 +49,8 @@ object Flows {
     .via(splitLines)
     // Deserialize json to Submission
     .map(_.utf8String.parseJson.convertTo[Submission](submissionFormat))
+    .withAttributes(supervisionStrategy(resumingDecider))
+
 
   /**
    * Takes NdJson ByteStrings and converts them to Submission objects
@@ -52,10 +59,7 @@ object Flows {
     .via(splitLines)
     // Deserialize json to UserInSubreddit
     .map(_.utf8String.parseJson.convertTo[UserInSubreddit](userInSubredditFormat))
-
-  /**
-   * Splits the lines of the incoming stream and filters out lines with NULL bytes
-   */
+    .withAttributes(supervisionStrategy(resumingDecider))
 
 
   /**
@@ -71,6 +75,7 @@ object Flows {
       CsvQuotingStyle.Required,
       StandardCharsets.UTF_8,
       None))
+
 
   /**
    * Wraps a Java Compressor Stream into a Source for the given file.

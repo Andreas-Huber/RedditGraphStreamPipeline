@@ -18,6 +18,7 @@ import java.util.Calendar
 import scala.::
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
+import scala.sys.exit
 
 /**
  * Runs the Dataset Statistics mode.
@@ -124,7 +125,19 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
 
 
     // Wait for the results
-    Await.result(eventualResult, 365.days)
+    try {
+      Await.result(eventualResult, 365.days)
+    }
+    catch {
+      case ex: Exception => {
+        log(ex)
+        exit(1)
+      }
+      case _: Throwable => {
+        log(_)
+        exit(1)
+      }
+    }
   }
 }
 
