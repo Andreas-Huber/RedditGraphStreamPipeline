@@ -94,7 +94,7 @@ object Main extends App {
 
           opt[File]("statistics-out")
             .valueName("<dir>")
-            .action((x, c) => c.copy(commentsOutFile = x))
+            .action((x, c) => c.copy(statisticsOutDir = x))
             .text("Directory where the results of the experiments shall be written to. Default value: '~'"),
         ),
 
