@@ -4,20 +4,15 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.IOResult
 import akka.stream.alpakka.file.scaladsl.Directory
-import akka.stream.scaladsl.{FileIO, Flow, Keep, Sink, Source}
+import akka.stream.scaladsl.{FileIO, Flow, Sink, Source}
 import akka.util.ByteString
-import no.simula.umod.redditdatasetstreampipeline.ConsoleTools.log
+import no.simula.umod.redditdatasetstreampipeline.ConsoleTools.{log, logDuration}
 import no.simula.umod.redditdatasetstreampipeline.Experiment.Experiment
-import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.{AuthorEntity, CommentEntity, ModelEntity, SubmissionEntity}
-import no.simula.umod.redditdatasetstreampipeline.model.{CountPerSubreddit, CountPerSubredditFactory, Submission, SubmissionFactory, ToCsv, UserInSubreddit, UserInSubredditFactory}
+import no.simula.umod.redditdatasetstreampipeline.model.{CountPerSubreddit, CountPerSubredditFactory, UserInSubreddit, UserInSubredditFactory}
 
-import java.io.File
 import java.nio.file.{Path, Paths}
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import scala.::
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Awaitable, Future}
 import scala.sys.exit
 
 /**
@@ -36,13 +31,12 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
     fileName.startsWith(filePrefix) && fileName.contains(config.fileNameContainsFilter)
   }
 
-  /** Counts the experiment to count the contributions users made in subreddits. A contribution is a post or comment. */
-  def runUserContributionsInSubreddits(experiment: Experiment) {
-
-    val outFile = Paths.get(config.statisticsOutDir.getAbsolutePath, s"$experiment.csv").toFile
-    println(s"Writing to file:    $outFile")
-
-    // Input
+  /**
+   * Creates a source with all the paths to the files that are part of the dataset.
+   * Takes the set filters into account.
+   * @return
+   */
+  private def createCommentSubmissionSource() : Source[Path, NotUsed]  = {
     val datasetDirectory = config.datasetDirectory.getAbsolutePath
     println(f"InputDirectory:     ${datasetDirectory}")
 
@@ -53,14 +47,34 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
       Directory.ls(commentsDirectory).filter(p => filterFiles("RC_", p))
         .concat(Directory.ls(submissionsDirectory).filter(p => filterFiles("RS_", p)))
 
+    filesSource
+  }
+
+  private def createStatisticsSink(experiment: Experiment): Sink[ByteString, Future[IOResult]] = {
+    val outFile = Paths.get(config.statisticsOutDir.getAbsolutePath, s"$experiment.csv").toFile
+    println(s"Writing to file:    $outFile")
+
     // Output
     val fileSink = FileIO.toPath(outFile.toPath)
 
+    fileSink
+  }
+
+
+  /** Counts the experiment to count the contributions users made in subreddits. A contribution is a post or comment. */
+  def runUserContributionsInSubreddits(experiment: Experiment) {
+
+    // Output
+    val fileSink = createStatisticsSink(experiment)
+
+    // Input
+    val filesSource = createCommentSubmissionSource()
 
     // Count the user contributions in a subreddit per file
     val countUserContributionInSubreddits: Flow[UserInSubreddit, CountPerSubreddit, NotUsed] =
       Flow[UserInSubreddit].concat(Source.single(UserInSubredditFactory.endOfStream())).statefulMapConcat { () =>
         val subreddits =  collection.mutable.Map[String, Int]()
+        val startNanoTime = System.nanoTime()
 
         { element =>
           if (element.author.isDefined) {
@@ -74,6 +88,9 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
           } else if (element.isEndOfStream()) {
             // Return the counts per subreddit as a list.
             val subredditsImmutable = subreddits.map(kv => CountPerSubreddit(kv._1, kv._2)).toList
+
+            logDuration(f"Count user in SR finished", startNanoTime)
+
             subredditsImmutable
           } else {
             // Do not emit anything
@@ -85,6 +102,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
     // Merge the results of the counts per file into one dictionary
     val mergeResults = Flow[CountPerSubreddit].concat(Source.single(CountPerSubredditFactory.endOfStream())).statefulMapConcat { () =>
       val subreddits =  collection.mutable.Map[String, Int]()
+      val startNanoTime = System.nanoTime()
 
       { element =>
         if (!element.subreddit.isEmpty) {
@@ -98,7 +116,9 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
         } else if (element.isEndOfStream()) {
           // Return the counts per subreddit as a list.
           val subredditsImmutable = subreddits.map(kv => CountPerSubreddit(kv._1, kv._2)).toList
+          logDuration("Merge counts finished", startNanoTime)
           subredditsImmutable
+
         } else {
           // Do not emit anything
           Nil
@@ -120,13 +140,17 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
       .via(Flows.objectToCsv)
       .runWith(fileSink)
 
-    println(f"Output is ready:    $outFile")
+    waitForResult(eventualResult)
+  }
+
+  private def waitForResult[T](result: Awaitable[T]) = {
+    println("Output is ready.")
     println("------------------------------------------")
 
 
     // Wait for the results
     try {
-      Await.result(eventualResult, 365.days)
+      Await.result(result, 365.days)
     }
     catch {
       case ex: Exception => {

@@ -147,7 +147,7 @@ object Main extends App {
   // Stop actor system
   completeAndTerminate()
 
-  def completeAndTerminate(): Unit ={
+  def completeAndTerminate(): Unit = {
     val duration = (System.nanoTime - startTime) / 1e9d
     log(f"Finished after: $duration seconds")
     system.terminate()
