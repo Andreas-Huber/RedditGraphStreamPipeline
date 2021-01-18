@@ -5,6 +5,15 @@ import java.util.Calendar
 
 object ConsoleTools {
 
+  private def getMemoryString() : String= {
+    val gb = 1024*1024*1024
+    val runtime = Runtime.getRuntime
+    val memory : String =
+      f"U:${(runtime.totalMemory - runtime.freeMemory) / gb}" +
+      f"T:${ runtime.totalMemory / gb}" +
+      f"M:${runtime.maxMemory / gb}"
+    memory
+  }
   /**
    * Logg the message with including the time
    * @param message message to log
@@ -23,7 +32,7 @@ object ConsoleTools {
 
     val duration = (System.nanoTime - startNanoTime) / 1e9d
 
-    println(f"$getDateString  $message ($duration%1.1f seconds) ")
+    println(f"$getDateString  $message ($duration%1.1f seconds) ${getMemoryString()}")
   }
 
   /** Get nicely formatted string of the current time */

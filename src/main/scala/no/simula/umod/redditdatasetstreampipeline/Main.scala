@@ -101,9 +101,14 @@ object Main extends App {
             .action((x, c) => c.copy(statisticsOutDir = x))
             .text("Directory where the results of the experiments shall be written to. Default value: '~'"),
         ),
-
     )
   }
+
+  val mb = 1024*1024
+  val runtime = Runtime.getRuntime
+  println("Memory Used  MB:  " + (runtime.totalMemory - runtime.freeMemory) / mb)
+  println("Memory Total MB:  " + runtime.totalMemory / mb)
+  println("Memory Max   MB:  " + runtime.maxMemory / mb)
 
   // Parse and chose actions based on the selected options
   OParser.parse(parser1, args, Config()) match {
