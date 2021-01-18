@@ -90,7 +90,11 @@ object Main extends App {
         .children(
           cmd("UserContributionsInSubreddits")
             .action((_, c) => c.copy(experiment = Experiment.UserContributionsInSubreddits))
-            .text("Experiment to count the contributions users made in subreddits. A contribution is a post or comment."),
+            .text("Experiment to count the number of contributions users made in subreddits. A contribution is a post or comment."),
+
+          cmd("UsersInSubreddits")
+            .action((_, c) => c.copy(experiment = Experiment.UsersInSubreddits))
+            .text("Experiment to count the users that made at least one contribution in a subreddit. A contribution is a post or comment."),
 
           opt[File]("statistics-out")
             .valueName("<dir>")
@@ -128,7 +132,8 @@ object Main extends App {
 
           // Select experiment
           config.experiment match {
-            case Experiment.UserContributionsInSubreddits => statistics.runUserContributionsInSubreddits(config.experiment)
+            case Experiment.UserContributionsInSubreddits => statistics.runUserContributionsInSubreddits()
+            case Experiment.UsersInSubreddits => statistics.runUsersInSubreddits()
             case _ =>
               println("Error: Experiment not implemented yet.")
               exit(1)
