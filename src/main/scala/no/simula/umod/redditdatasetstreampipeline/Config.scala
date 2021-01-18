@@ -37,6 +37,6 @@ object ProgramMode extends Enumeration {
 
 object Experiment extends Enumeration {
   type Experiment = Value
-  val None, UserContributionsInSubreddits = Value
+  val None, UserContributionsInSubreddits, UsersInSubreddits = Value
 }
 
