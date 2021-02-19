@@ -24,6 +24,7 @@ case class Config (
                     authorsOutFile: File = new File("authors.csv"),
                     enableCount: Boolean = false,
                     fileNameContainsFilter: String = "",
+                    fileNameNotContainsFilter: String = "",
 
                     // Statistics options
                     experiment: Experiment = Experiment.None,

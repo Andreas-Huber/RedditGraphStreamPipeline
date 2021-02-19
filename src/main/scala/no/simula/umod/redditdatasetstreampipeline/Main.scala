@@ -45,6 +45,11 @@ object Main extends App {
         .action((x, c) => c.copy(fileNameContainsFilter = x))
         .text("File name contains filter."),
 
+      opt[String]("exclude")
+        .valueName("<exclude>")
+        .action((x, c) => c.copy(fileNameNotContainsFilter = x))
+        .text("File name not contains filter."),
+
       help("help").text("prints this usage text"),
 
       cmd("passtrough")

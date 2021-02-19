@@ -21,10 +21,7 @@ import scala.sys.exit
  * @param actorSystem Akka actor system
  * @param config      Command line config
  */
-class Statistics(actorSystem: ActorSystem, config: Config) {
-
-  private implicit val system: ActorSystem = actorSystem
-  private val numberOfThreads = config.numberOfConcurrentFiles
+class Statistics(actorSystem: ActorSystem, config: Config) extends DatasetRun(actorSystem, config) {
 
   /**
    * Flow to merge the results of the counts per subreddits into one map
@@ -209,12 +206,6 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
     filesSource
   }
 
-  private def filterFiles(filePrefix: String, p: Path) = {
-    val fileName = p.getFileName.toString
-
-    fileName.startsWith(filePrefix) && fileName.contains(config.fileNameContainsFilter)
-  }
-
   /** Create a file sink based on the experiment */
   private def createStatisticsSink(): Sink[ByteString, Future[IOResult]] = {
     val outFile = Paths.get(config.statisticsOutDir.getAbsolutePath, s"${config.experiment}.csv").toFile
@@ -239,8 +230,8 @@ class Statistics(actorSystem: ActorSystem, config: Config) {
         log(ex)
         exit(1)
       }
-      case _: Throwable => {
-        log(_)
+      case tr: Throwable => {
+        log(tr)
         exit(1)
       }
     }
