@@ -21,10 +21,7 @@ import scala.concurrent.{Await, Future}
  * @param actorSystem Akka actor system
  * @param config Command line config
  */
-class PassTrough(actorSystem: ActorSystem, config: Config) {
-
-  private implicit val system: ActorSystem = actorSystem
-  private val numberOfThreads = config.numberOfConcurrentFiles
+class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(actorSystem, config) {
 
   // Divide "threads" between two streams
   if(config.provideSubmissionsStream && config.provideCommentsStream){
@@ -68,12 +65,6 @@ class PassTrough(actorSystem: ActorSystem, config: Config) {
     println(f"Out pipe is ready to be read: $outFile")
 
     (eventualResult, countResult)
-  }
-
-  private def filterFiles(filePrefix: String, p: Path) = {
-    val fileName = p.getFileName.toString
-
-    fileName.startsWith(filePrefix) && fileName.contains(config.fileNameContainsFilter)
   }
 
   /**
