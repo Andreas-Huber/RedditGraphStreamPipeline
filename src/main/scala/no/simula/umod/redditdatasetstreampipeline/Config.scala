@@ -14,6 +14,8 @@ case class Config (
                     datasetDirectory: File = new File("redditdataset"),
                     numberOfConcurrentFiles: Int = Runtime.getRuntime.availableProcessors(),
                     programMode: ProgramMode = ProgramMode.None,
+                    fileNameContainsFilter: String = "",
+                    fileNameNotContainsFilter: String = "",
 
                     // Pass trough options
                     provideSubmissionsStream: Boolean = false,
@@ -23,8 +25,7 @@ case class Config (
                     commentsOutFile: File = new File("comments.csv"),
                     authorsOutFile: File = new File("authors.csv"),
                     enableCount: Boolean = false,
-                    fileNameContainsFilter: String = "",
-                    fileNameNotContainsFilter: String = "",
+                    filterBySubreddits: File = null,
 
                     // Statistics options
                     experiment: Experiment = Experiment.None,

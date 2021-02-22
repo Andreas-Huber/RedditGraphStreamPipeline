@@ -86,6 +86,12 @@ object Main extends App {
             .valueName("<file>")
             .action((x, c) => c.copy(authorsOutFile = x))
             .text("File or named pipe where to write the authors csv to. Default value: 'authors.csv'"),
+
+          opt[File]("filter-by-subreddits")
+            .valueName("<file>")
+            .action((x, c) => c.copy(filterBySubreddits = x))
+            .text("Filter by a newline separated list of subreddits.'"),
+
         ),
 
       cmd("statistics")

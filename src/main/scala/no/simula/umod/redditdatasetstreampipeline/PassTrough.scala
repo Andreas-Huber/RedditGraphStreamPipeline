@@ -93,6 +93,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
         Flows.getCompressorInputStreamSource(file.toString)
           .via(Flows.ndJsonToObj(entityType))//.async // todo: remove!?
           .via(Flows.objectToCsv)
+
       })
       .runWith(fileSink)
 
