@@ -5,7 +5,7 @@ case class Submission(
                        id: Option[String],
                        author: Option[String],
                        title: Option[String]
-                     ) extends ToCsv {
+                     ) extends SubredditEntity {
 
   override def toCsvSeq: Seq[String] = Seq(
     subreddit.getOrElse(""),

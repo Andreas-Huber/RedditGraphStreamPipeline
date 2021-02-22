@@ -22,7 +22,7 @@ object Flows {
   /**
    * Takes NdJson ByteStrings and converts them to the provided Entity
    */
-  def ndJsonToObj(entity: ModelEntity) : Flow[ByteString, ToCsv, NotUsed] = {
+  def ndJsonToObj(entity: ModelEntity) : Flow[ByteString, SubredditEntity, NotUsed] = {
     entity match {
       case ModelEntity.SubmissionEntity => splitLines.map(_.utf8String.parseJson.convertTo[Submission])
         .withAttributes(supervisionStrategy(resumingDecider))

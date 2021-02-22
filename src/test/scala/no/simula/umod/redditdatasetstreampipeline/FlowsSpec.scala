@@ -104,16 +104,16 @@ class FlowsSpec extends AnyFlatSpec with BeforeAndAfter {
 
   }
 
-  "objectToCsv" should "should convert Authos to CSV ByteStrings" in {
+  "objectToCsv" should "should convert Authors to CSV ByteStrings" in {
     val conv = Flows.objectToCsv
 
-    val result = Source.single(Author(1609692958))
+    val result = Source.single(Author(None, Option("Alf"), 1609692958))
       .via(conv)
       .map(_.utf8String)
       .runWith(Sink.seq)
 
     val res = Await.result(result, 3.seconds)
-    assert(res.head === "1609692958\n")
+    assert(res.head === "Alf,1609692958\n")
 
   }
 }

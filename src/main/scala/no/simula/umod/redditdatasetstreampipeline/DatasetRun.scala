@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 
 import java.nio.file.Path
 import scala.collection.immutable
+import scala.collection.immutable.HashSet
 import scala.io.Source
 
 abstract class DatasetRun(actorSystem: ActorSystem, config: Config) {
@@ -11,18 +12,18 @@ abstract class DatasetRun(actorSystem: ActorSystem, config: Config) {
   protected val numberOfThreads = config.numberOfConcurrentFiles
 
   // Load filter list
-  var subredditsToFilter: IndexedSeq[String] = immutable.IndexedSeq.empty[String]
+  var subredditsToFilter: HashSet[String] = immutable.HashSet.empty[String]
   if(config.filterBySubreddits != null){
-    subredditsToFilter = Source.fromFile(config.filterBySubreddits).getLines().toIndexedSeq
+    subredditsToFilter = immutable.HashSet.from(Source.fromFile(config.filterBySubreddits).getLines().drop(1))
   }
-  val filterBySubreddits: Boolean = subredditsToFilter != null && subredditsToFilter.length > 0
+  val filterBySubreddits: Boolean = subredditsToFilter != null && !subredditsToFilter.isEmpty
 
   /**
    * Filters the stream by subreddits, if the optional filter is configured via the config.
    * @param subreddit name of the subreddit
    * @return True if it shall be included in the output stream
    */
-  protected def filterSubreddits(subreddit: String): Boolean = filterBySubreddits && subredditsToFilter.contains(subreddit)
+  protected def filterSubreddits(subreddit: Option[String]): Boolean = !filterBySubreddits || subredditsToFilter.contains(subreddit.getOrElse(""))
 
   /**
    * Filter the file name based on a prefix and the filters specified in the config
@@ -40,6 +41,4 @@ abstract class DatasetRun(actorSystem: ActorSystem, config: Config) {
     // Filter file name not contains - only if set
       (config.fileNameNotContainsFilter.isBlank || !fileName.contains(config.fileNameNotContainsFilter))
   }
-
-
 }

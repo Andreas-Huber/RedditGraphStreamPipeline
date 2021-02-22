@@ -5,7 +5,7 @@ case class Comment(
                     id: Option[String],
                     author: Option[String],
                     body: Option[String]
-                  ) extends ToCsv {
+                  ) extends SubredditEntity {
 
   override def toCsvSeq: Seq[String] = Seq(
     subreddit.getOrElse(""),

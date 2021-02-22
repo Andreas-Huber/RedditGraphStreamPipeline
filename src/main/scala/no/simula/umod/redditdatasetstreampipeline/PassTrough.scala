@@ -55,6 +55,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
 
         Flows.getCompressorInputStreamSource(file.toString)
           .via(Flows.ndJsonToObj(entityType))
+          .filter(e => filterSubreddits(e.subreddit))
           .via(Flows.objectToCsv)
       })
       .alsoToMat(fileSink)(Keep.right)
@@ -92,8 +93,8 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
 
         Flows.getCompressorInputStreamSource(file.toString)
           .via(Flows.ndJsonToObj(entityType))//.async // todo: remove!?
+          .filter(e => filterSubreddits(e.subreddit))
           .via(Flows.objectToCsv)
-
       })
       .runWith(fileSink)
 
