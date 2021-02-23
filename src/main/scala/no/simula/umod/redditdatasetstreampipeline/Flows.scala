@@ -22,7 +22,7 @@ object Flows {
   /**
    * Takes NdJson ByteStrings and converts them to the provided Entity
    */
-  def ndJsonToObj(entity: ModelEntity) : Flow[ByteString, ToCsv, NotUsed] = {
+  def ndJsonToObj(entity: ModelEntity) : Flow[ByteString, SubredditEntity, NotUsed] = {
     entity match {
       case ModelEntity.SubmissionEntity => splitLines.map(_.utf8String.parseJson.convertTo[Submission])
         .withAttributes(supervisionStrategy(resumingDecider))
@@ -48,7 +48,7 @@ object Flows {
   val ndJsonToSubmission: Flow[ByteString, Submission, NotUsed] = Flow[ByteString]
     .via(splitLines)
     // Deserialize json to Submission
-    .map(_.utf8String.parseJson.convertTo[Submission](submissionFormat))
+    .map(_.utf8String.parseJson.convertTo[Submission])
     .withAttributes(supervisionStrategy(resumingDecider))
 
 
@@ -58,7 +58,7 @@ object Flows {
   val ndJsonToUserInSubreddit: Flow[ByteString, UserInSubreddit, NotUsed] = Flow[ByteString]
     .via(splitLines)
     // Deserialize json to UserInSubreddit
-    .map(_.utf8String.parseJson.convertTo[UserInSubreddit](userInSubredditFormat))
+    .map(_.utf8String.parseJson.convertTo[UserInSubreddit])
     .withAttributes(supervisionStrategy(resumingDecider))
 
 

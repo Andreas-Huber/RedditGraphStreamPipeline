@@ -1,17 +1,18 @@
 package no.simula.umod.redditdatasetstreampipeline.model
 
 case class Author(
-                    //author: Option[String],
+                    subreddit: Option[String], // Will always be empty
+                    author: Option[String],
                     created_utc: Int
-                  ) extends ToCsv {
+                  ) extends SubredditEntity {
 
   override def toCsvSeq: Seq[String] = Seq(
-    //author.getOrElse(""),
+    author.getOrElse(""),
     created_utc.toString
   )
 
   override def getHeaders: Seq[String] = Seq(
-    //"author",
+    "author",
     "created_utc"
   )
 }

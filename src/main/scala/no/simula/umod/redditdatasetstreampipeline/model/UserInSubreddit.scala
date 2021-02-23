@@ -5,7 +5,7 @@ case class UserInSubreddit (
                     author: Option[String]
                   ) extends StreamMarker {
 
-  def isEndOfStream(): Boolean = subreddit.isEmpty && author.isEmpty
+  def isEndOfStream: Boolean = subreddit.isEmpty && author.isEmpty
 }
 
 object UserInSubredditFactory {

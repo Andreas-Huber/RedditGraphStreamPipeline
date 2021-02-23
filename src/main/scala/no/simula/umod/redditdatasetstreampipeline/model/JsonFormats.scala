@@ -9,8 +9,9 @@ import spray.json.RootJsonFormat
 object JsonFormats {
   implicit val submissionFormat: RootJsonFormat[Submission] = jsonFormat4(Submission)
   implicit val commentFormat: RootJsonFormat[Comment] = jsonFormat4(Comment)
-  implicit val authorFormat: RootJsonFormat[Author] = jsonFormat1(Author)
+  implicit val authorFormat: RootJsonFormat[Author] = jsonFormat3(Author)
   implicit val userInSubredditFormat: RootJsonFormat[UserInSubreddit] = jsonFormat2(UserInSubreddit)
+  implicit val subredditAuthorFormat: RootJsonFormat[SubredditAuthor] = jsonFormat2(SubredditAuthor)
 }
 
 
