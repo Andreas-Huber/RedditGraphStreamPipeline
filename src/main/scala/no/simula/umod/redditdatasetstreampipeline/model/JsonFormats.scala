@@ -11,6 +11,7 @@ object JsonFormats {
   implicit val commentFormat: RootJsonFormat[Comment] = jsonFormat4(Comment)
   implicit val authorFormat: RootJsonFormat[Author] = jsonFormat3(Author)
   implicit val userInSubredditFormat: RootJsonFormat[UserInSubreddit] = jsonFormat2(UserInSubreddit)
+  implicit val subredditAuthorFormat: RootJsonFormat[SubredditAuthor] = jsonFormat2(SubredditAuthor)
 }
 
 

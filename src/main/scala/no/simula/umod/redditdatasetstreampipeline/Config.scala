@@ -26,6 +26,7 @@ case class Config (
                     authorsOutFile: File = new File("authors.csv"),
                     enableCount: Boolean = false,
                     filterBySubreddits: File = null,
+                    keepOriginalJson: Boolean = false,
 
                     // Statistics options
                     experiment: Experiment = Experiment.None,

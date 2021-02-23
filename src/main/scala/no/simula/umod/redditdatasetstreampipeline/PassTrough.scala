@@ -1,7 +1,5 @@
 package no.simula.umod.redditdatasetstreampipeline
 
-import java.io.File
-import java.nio.file.{Path, Paths}
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.IOResult
@@ -11,6 +9,8 @@ import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.ConsoleTools.log
 import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.{AuthorEntity, CommentEntity, ModelEntity, SubmissionEntity}
 
+import java.io.File
+import java.nio.file.{Path, Paths}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
@@ -53,10 +53,19 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
       .flatMapMerge(numberOfThreads, file => {
         println(file)
 
-        Flows.getCompressorInputStreamSource(file.toString)
-          .via(Flows.ndJsonToObj(entityType))
-          .filter(e => filterSubreddits(e.subreddit))
-          .via(Flows.objectToCsv)
+        if (config.keepOriginalJson) {
+          // Only filter original json lines
+          Flows.getCompressorInputStreamSource(file.toString)
+            .via(Flows.splitLines)
+            .filter(l => filterJsonBySubreddit(l))
+            .map(bs => bs ++ newLineByteString)
+        } else {
+          // Convert to csv
+          Flows.getCompressorInputStreamSource(file.toString)
+            .via(Flows.ndJsonToObj(entityType))
+            .filter(e => filterSubreddits(e.subreddit))
+            .via(Flows.objectToCsv)
+        }
       })
       .alsoToMat(fileSink)(Keep.right)
       .toMat(countSink)(Keep.both)
@@ -87,22 +96,31 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
 
     val fileSink = FileIO.toPath(outFile.toPath)
 
-    val eventualResult = filesSource
+    val eventualResult: Future[IOResult] = filesSource
       .flatMapMerge(numberOfThreads, file => {
         log(file)
 
-        Flows.getCompressorInputStreamSource(file.toString)
-          .via(Flows.ndJsonToObj(entityType))//.async // todo: remove!?
-          .filter(e => filterSubreddits(e.subreddit))
-          .via(Flows.objectToCsv)
+        if (config.keepOriginalJson) {
+          // Only filter original json lines
+          Flows.getCompressorInputStreamSource(file.toString)
+            .via(Flows.splitLines)
+            .filter(l => filterJsonBySubreddit(l))
+            .map(bs => bs ++ newLineByteString)
+        } else {
+          // Convert json to CSV
+          Flows.getCompressorInputStreamSource(file.toString)
+            .via(Flows.ndJsonToObj(entityType))
+            .filter(e => filterSubreddits(e.subreddit))
+            .via(Flows.objectToCsv)
+        }
       })
       .runWith(fileSink)
-
 
     println(f"Out pipe is ready to be read: $outFile")
 
     eventualResult
   }
+
 
   /** Runs the pass trough with the given options and waits for it's completion. */
   def runPassTrough() {

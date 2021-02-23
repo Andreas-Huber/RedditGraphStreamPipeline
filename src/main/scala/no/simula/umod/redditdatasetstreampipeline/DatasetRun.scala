@@ -1,15 +1,20 @@
 package no.simula.umod.redditdatasetstreampipeline
 
 import akka.actor.ActorSystem
+import akka.util.ByteString
+import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
+import no.simula.umod.redditdatasetstreampipeline.model.{Author, SubredditAuthor, SubredditEntity}
 
 import java.nio.file.Path
 import scala.collection.immutable
 import scala.collection.immutable.HashSet
 import scala.io.Source
+import spray.json._
 
 abstract class DatasetRun(actorSystem: ActorSystem, config: Config) {
   protected implicit val system: ActorSystem = actorSystem
   protected val numberOfThreads = config.numberOfConcurrentFiles
+  protected val newLineByteString = ByteString("\n")
 
   // Load filter list
   var subredditsToFilter: HashSet[String] = immutable.HashSet.empty[String]
@@ -24,6 +29,17 @@ abstract class DatasetRun(actorSystem: ActorSystem, config: Config) {
    * @return True if it shall be included in the output stream
    */
   protected def filterSubreddits(subreddit: Option[String]): Boolean = !filterBySubreddits || subredditsToFilter.contains(subreddit.getOrElse(""))
+
+  protected def filterJsonBySubreddit(line: ByteString) : Boolean = {
+    val entity = line.utf8String.parseJson.convertTo[SubredditAuthor]
+
+    // Author is defined
+    (entity.author.isDefined && entity.author.get != "[deleted]") &&
+    // Subreddit is in the list
+      filterSubreddits(entity.subreddit)
+  }
+
+  //.withAttributes(supervisionStrategy(resumingDecider))
 
   /**
    * Filter the file name based on a prefix and the filters specified in the config

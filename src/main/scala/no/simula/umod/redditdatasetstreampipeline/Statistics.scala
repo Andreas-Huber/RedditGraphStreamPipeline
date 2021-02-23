@@ -78,7 +78,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
             })
 
             Nil
-          } else if (element.isEndOfStream()) {
+          } else if (element.isEndOfStream) {
             // Return the counts per subreddit as a list.
             val subredditsImmutable = subreddits.map(kv => CountPerSubreddit(kv._1, kv._2)).toList
 
@@ -139,7 +139,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
           })
 
           Nil
-        } else if (element.isEndOfStream()) {
+        } else if (element.isEndOfStream) {
           // Return the counts per subreddit as a list.
 
 

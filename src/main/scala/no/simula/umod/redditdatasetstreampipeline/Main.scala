@@ -92,6 +92,10 @@ object Main extends App {
             .action((x, c) => c.copy(filterBySubreddits = x))
             .text("Filter by a newline separated list of subreddits.'"),
 
+          opt[Unit]("keep-original-json")
+            .action((_, c) => c.copy(keepOriginalJson = true))
+            .text("If enabled, the program writes the original json to the stream."),
+
         ),
 
       cmd("statistics")
