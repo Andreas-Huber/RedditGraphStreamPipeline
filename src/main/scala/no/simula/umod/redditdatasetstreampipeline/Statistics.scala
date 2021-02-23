@@ -30,7 +30,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
     Source.single(CountPerSubredditFactory.endOfStream())
   ).statefulMapConcat { () =>
 
-    val subreddits = collection.mutable.Map[String, Int]()
+    val subreddits = collection.mutable.HashMap[String, Int]()
     val startNanoTime = System.nanoTime()
 
     { element =>
@@ -66,7 +66,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
     // Count the user contributions in a subreddit per file
     val countUserContributionInSubredditsPerFile: Flow[UserInSubreddit, CountPerSubreddit, NotUsed] =
       Flow[UserInSubreddit].concat(Source.single(UserInSubredditFactory.endOfStream())).statefulMapConcat { () =>
-        val subreddits = collection.mutable.Map[String, Int]()
+        val subreddits = collection.mutable.HashMap[String, Int]()
         val startNanoTime = System.nanoTime()
 
         { element =>
@@ -114,7 +114,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
   val countUsersInSubredditsPerFile: Flow[UserInSubreddit, CountPerSubreddit, NotUsed] =
     Flow[UserInSubreddit].concat(Source.single(UserInSubredditFactory.endOfStream())).statefulMapConcat { () =>
 
-      val subreddits: mutable.Map[String, mutable.Map[String, Int]] = collection.mutable.Map()
+      val subreddits: mutable.HashMap[String, mutable.HashMap[String, Int]] = collection.mutable.HashMap()
       val startNanoTime = System.nanoTime()
 
       // Remarks: Increasing the count per author is not necessary. But it should not increase the duration
@@ -135,7 +135,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
               Some(old)
 
             // Create new entry for subreddit with current author and a count of 1
-            case None => Some(mutable.Map(element.author.get -> 1))
+            case None => Some(mutable.HashMap(element.author.get -> 1))
           })
 
           Nil
