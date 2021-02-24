@@ -42,6 +42,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
 
     println(f"PassTrough entity:  ${entityType.toString}")
     println(f"InputDirectory:     $inputDirectory")
+    println(f"Compress output:    ${config.compressOutput}")
 
 
     val filesSource: Source[Path, NotUsed] = Directory.ls(inputDirectory).filter(p => filterFiles(filePrefix, p))
