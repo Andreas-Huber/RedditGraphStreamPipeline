@@ -211,9 +211,7 @@ class Statistics(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
     val outFile = Paths.get(config.statisticsOutDir.getAbsolutePath, s"${config.experiment}.csv").toFile
     println(s"Writing to file:    $outFile")
 
-    val fileSink = FileIO.toPath(outFile.toPath)
-
-    fileSink
+    getFileSink(outFile)
   }
 
   private def waitForResult[T](result: Awaitable[T]) = {

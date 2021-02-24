@@ -5,7 +5,7 @@ import akka.stream.ActorAttributes.supervisionStrategy
 import akka.stream.IOResult
 import akka.stream.Supervision.resumingDecider
 import akka.stream.alpakka.csv.scaladsl.{CsvFormatting, CsvQuotingStyle}
-import akka.stream.scaladsl.{Flow, Framing, Source, StreamConverters}
+import akka.stream.scaladsl.{Flow, Framing, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.ModelEntity
@@ -13,7 +13,7 @@ import no.simula.umod.redditdatasetstreampipeline.model._
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 import spray.json._
 
-import java.io.{BufferedInputStream, File, FileInputStream, FileNotFoundException}
+import java.io.{BufferedInputStream, BufferedOutputStream, File, FileInputStream, FileNotFoundException, FileOutputStream}
 import java.nio.charset.StandardCharsets
 import scala.concurrent.Future
 
@@ -89,5 +89,19 @@ object Flows {
     val compressorInputStream = new CompressorStreamFactory()
       .createCompressorInputStream(compressionName, bufferedInputStream, true)
     StreamConverters.fromInputStream(() => compressorInputStream)
+  }
+
+  /**
+   * Wraps a Java Compressor Stream into a Source for the given file.
+   */
+  @throws[FileNotFoundException]
+  @throws[CompressorException]
+  def getCompressorStreamSink(fileName: File): Sink[ByteString, Future[IOResult]] = {
+    val fileOutputStream = new FileOutputStream(fileName)
+    val bufferedOutputStream = new BufferedOutputStream(fileOutputStream)
+
+    val compressorInputStream = new CompressorStreamFactory()
+      .createCompressorOutputStream(CompressorStreamFactory.ZSTANDARD, bufferedOutputStream)
+    StreamConverters.fromOutputStream(() => compressorInputStream)
   }
 }

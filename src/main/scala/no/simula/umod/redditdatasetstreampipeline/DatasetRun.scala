@@ -1,6 +1,8 @@
 package no.simula.umod.redditdatasetstreampipeline
 
 import akka.actor.ActorSystem
+import akka.stream.IOResult
+import akka.stream.scaladsl.{FileIO, Sink}
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
 import no.simula.umod.redditdatasetstreampipeline.model.{Author, SubredditAuthor, SubredditEntity}
@@ -10,6 +12,9 @@ import scala.collection.immutable
 import scala.collection.immutable.HashSet
 import scala.io.Source
 import spray.json._
+
+import java.io.File
+import scala.concurrent.Future
 
 abstract class DatasetRun(actorSystem: ActorSystem, config: Config) {
   protected implicit val system: ActorSystem = actorSystem
@@ -56,5 +61,19 @@ abstract class DatasetRun(actorSystem: ActorSystem, config: Config) {
       fileName.contains(config.fileNameContainsFilter) &&
     // Filter file name not contains - only if set
       (config.fileNameNotContainsFilter.isBlank || !fileName.contains(config.fileNameNotContainsFilter))
+  }
+
+  /**
+   * Returns a file sink - optionally with compression.
+   * @param outFile
+   * @return
+   */
+  protected def getFileSink(outFile: File): Sink[ByteString, Future[IOResult]] = {
+    if(config.compressOutput){
+      Flows.getCompressorStreamSink(outFile)
+    }
+    else {
+      FileIO.toPath(outFile.toPath)
+    }
   }
 }

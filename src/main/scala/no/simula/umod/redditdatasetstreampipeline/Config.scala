@@ -16,6 +16,7 @@ case class Config (
                     programMode: ProgramMode = ProgramMode.None,
                     fileNameContainsFilter: String = "",
                     fileNameNotContainsFilter: String = "",
+                    compressOutput: Boolean = false,
 
                     // Pass trough options
                     provideSubmissionsStream: Boolean = false,

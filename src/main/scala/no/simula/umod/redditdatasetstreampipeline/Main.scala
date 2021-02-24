@@ -50,6 +50,10 @@ object Main extends App {
         .action((x, c) => c.copy(fileNameNotContainsFilter = x))
         .text("File name not contains filter."),
 
+      opt[Unit]("compress")
+        .action((_, c) => c.copy(compressOutput = true))
+        .text("If enabled, the output will be compressed using ZSTD."),
+
       help("help").text("prints this usage text"),
 
       cmd("passtrough")
@@ -87,15 +91,14 @@ object Main extends App {
             .action((x, c) => c.copy(authorsOutFile = x))
             .text("File or named pipe where to write the authors csv to. Default value: 'authors.csv'"),
 
-          opt[File]("filter-by-subreddits")
+          opt[File]("filter-by-sr")
             .valueName("<file>")
             .action((x, c) => c.copy(filterBySubreddits = x))
-            .text("Filter by a newline separated list of subreddits.'"),
+            .text("Filter by a newline separated list of subreddits."),
 
           opt[Unit]("keep-original-json")
             .action((_, c) => c.copy(keepOriginalJson = true))
             .text("If enabled, the program writes the original json to the stream."),
-
         ),
 
       cmd("statistics")

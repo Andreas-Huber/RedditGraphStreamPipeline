@@ -46,7 +46,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
 
     val filesSource: Source[Path, NotUsed] = Directory.ls(inputDirectory).filter(p => filterFiles(filePrefix, p))
 
-    val fileSink = FileIO.toPath(outFile.toPath)
+    val fileSink = getFileSink(outFile)
     val countSink = Sink.fold[Int, ByteString](0)((acc, _) => acc + 1)
 
     val (eventualResult, countResult) = filesSource
@@ -92,9 +92,8 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
     println(f"PassTrough entity: ${entityType.toString}")
     println(f"InputDirectory: $inputDirectory")
 
+    val fileSink = getFileSink(outFile)
     val filesSource: Source[Path, NotUsed] = Directory.ls(inputDirectory).filter(p => filterFiles(filePrefix, p))
-
-    val fileSink = FileIO.toPath(outFile.toPath)
 
     val eventualResult: Future[IOResult] = filesSource
       .flatMapMerge(numberOfThreads, file => {
