@@ -7,7 +7,7 @@ import akka.stream.alpakka.file.scaladsl.Directory
 import akka.stream.scaladsl.{FileIO, Keep, Sink, Source}
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.ConsoleTools.log
-import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.{AuthorEntity, CommentEntity, ModelEntity, SubmissionEntity}
+import no.simula.umod.redditdatasetstreampipeline.model.ModelEntity.{AuthorEntity, CommentEntity, ModelEntity, SubmissionEntity, UserInSubredditEntity}
 
 import java.io.File
 import java.nio.file.{Path, Paths}
@@ -64,6 +64,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
           // Convert to csv
           Flows.getCompressorInputStreamSource(file.toString)
             .via(Flows.ndJsonToObj(entityType))
+            .filter(e => e.author.isDefined && e.author.get != "[deleted]")
             .filter(e => filterSubreddits(e.subreddit))
             .via(Flows.objectToCsv)
         }
@@ -110,6 +111,7 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
           // Convert json to CSV
           Flows.getCompressorInputStreamSource(file.toString)
             .via(Flows.ndJsonToObj(entityType))
+            .filter(e => e.author.isDefined && e.author.get != "[deleted]")
             .filter(e => filterSubreddits(e.subreddit))
             .via(Flows.objectToCsv)
         }
@@ -137,26 +139,29 @@ class PassTrough(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
 
     // Start the pipelines async
     if(config.provideCommentsStream){
+      val entity = if(config.onlyUserInSubreddit)  UserInSubredditEntity else CommentEntity
       if (config.enableCount){
-        val (result, countResult)  = datasetPipeAndCount("comments", "RC_", CommentEntity, config.commentsOutFile)
+        val (result, countResult)  = datasetPipeAndCount("comments", "RC_", entity, config.commentsOutFile)
         commentsResult = result
         commentsCountResult = countResult
       } else {
-        commentsResult = datasetPipe("comments", "RC_", CommentEntity, config.commentsOutFile)
+        commentsResult = datasetPipe("comments", "RC_", entity, config.commentsOutFile)
       }
     }
 
     if(config.provideSubmissionsStream){
+      val entity = if(config.onlyUserInSubreddit)  UserInSubredditEntity else SubmissionEntity
       if(config.enableCount){
-        val (result, countResult)  = datasetPipeAndCount("submissions", "RS_", SubmissionEntity, config.submissionsOutFile)
+        val (result, countResult)  = datasetPipeAndCount("submissions", "RS_", entity, config.submissionsOutFile)
         submissionResult = result
         submissionCountResult = countResult
       } else {
-        submissionResult = datasetPipe("submissions", "RS_", SubmissionEntity, config.submissionsOutFile)
+        submissionResult = datasetPipe("submissions", "RS_", entity, config.submissionsOutFile)
       }
     }
 
     if(config.provideAuthorsStream){
+      if(config.onlyUserInSubreddit) log("Warn: Authors can not be exported as UserInSubreddit. Proceed with AuthorEntity.")
       if (config.enableCount){
         val (result, countResult)  = datasetPipeAndCount("authors", "RA_2020-06-28.ndjson.zst", AuthorEntity, config.authorsOutFile)
         authorsResult = result

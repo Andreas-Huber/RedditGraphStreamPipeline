@@ -28,6 +28,7 @@ case class Config (
                     enableCount: Boolean = false,
                     filterBySubreddits: File = null,
                     keepOriginalJson: Boolean = false,
+                    onlyUserInSubreddit: Boolean = false,
 
                     // Statistics options
                     experiment: Experiment = Experiment.None,

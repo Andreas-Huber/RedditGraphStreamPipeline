@@ -99,6 +99,10 @@ object Main extends App {
           opt[Unit]("keep-original-json")
             .action((_, c) => c.copy(keepOriginalJson = true))
             .text("If enabled, the program writes the original json to the stream."),
+
+          opt[Unit]("only-user-in-sr")
+            .action((_, c) => c.copy(onlyUserInSubreddit = true))
+            .text("If enabled, the program writes only a subreddit,user csv."),
         ),
 
       cmd("statistics")
@@ -145,6 +149,12 @@ object Main extends App {
           if(!config.provideSubmissionsStream && !config.provideCommentsStream && !config.provideAuthorsStream){
             println("Error: No stream enabled. No output will be generated.")
             println("Add the '--submissions', '--comments' or '--authors' option.")
+            exit(1)
+          }
+
+          if(config.keepOriginalJson && config.onlyUserInSubreddit) {
+            println("Error: Decide if you want json or only users and subreddits as a csv.")
+            println("Remove either the '--keep-original-json' or the '--only-user-in-sr' option.")
             exit(1)
           }
 

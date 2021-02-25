@@ -30,6 +30,8 @@ object Flows {
         .withAttributes(supervisionStrategy(resumingDecider))
       case ModelEntity.AuthorEntity => splitLines.map(_.utf8String.parseJson.convertTo[Author])
         .withAttributes(supervisionStrategy(resumingDecider))
+      case ModelEntity.UserInSubredditEntity => splitLines.map(_.utf8String.parseJson.convertTo[UserInSubreddit])
+        .withAttributes(supervisionStrategy(resumingDecider))
       case _ => throw new NotImplementedError("ndJson for this type is not implemented.")
     }
   }

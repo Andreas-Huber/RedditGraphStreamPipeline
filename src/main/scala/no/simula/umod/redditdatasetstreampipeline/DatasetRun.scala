@@ -5,7 +5,7 @@ import akka.stream.IOResult
 import akka.stream.scaladsl.{FileIO, Sink}
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
-import no.simula.umod.redditdatasetstreampipeline.model.SubredditAuthor
+import no.simula.umod.redditdatasetstreampipeline.model.UserInSubreddit
 import spray.json._
 
 import java.io.File
@@ -41,7 +41,7 @@ abstract class DatasetRun(actorSystem: ActorSystem, config: Config) {
    */
   protected def filterJsonBySubreddit(line: ByteString): Boolean = {
     try {
-      val entity = line.utf8String.parseJson.convertTo[SubredditAuthor]
+      val entity = line.utf8String.parseJson.convertTo[UserInSubreddit]
 
       // Author is defined
       (entity.author.isDefined && entity.author.get != "[deleted]") &&
