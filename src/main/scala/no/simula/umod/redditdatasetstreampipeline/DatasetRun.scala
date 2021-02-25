@@ -5,16 +5,15 @@ import akka.stream.IOResult
 import akka.stream.scaladsl.{FileIO, Sink}
 import akka.util.ByteString
 import no.simula.umod.redditdatasetstreampipeline.model.JsonFormats._
-import no.simula.umod.redditdatasetstreampipeline.model.{Author, SubredditAuthor, SubredditEntity}
-
-import java.nio.file.Path
-import scala.collection.immutable
-import scala.collection.immutable.HashSet
-import scala.io.Source
+import no.simula.umod.redditdatasetstreampipeline.model.SubredditAuthor
 import spray.json._
 
 import java.io.File
+import java.nio.file.Path
+import scala.collection.immutable
+import scala.collection.immutable.HashSet
 import scala.concurrent.Future
+import scala.io.Source
 
 abstract class DatasetRun(actorSystem: ActorSystem, config: Config) {
   protected implicit val system: ActorSystem = actorSystem
@@ -35,13 +34,22 @@ abstract class DatasetRun(actorSystem: ActorSystem, config: Config) {
    */
   protected def filterSubreddits(subreddit: Option[String]): Boolean = !filterBySubreddits || subredditsToFilter.contains(subreddit.getOrElse(""))
 
-  protected def filterJsonBySubreddit(line: ByteString) : Boolean = {
-    val entity = line.utf8String.parseJson.convertTo[SubredditAuthor]
+  /**
+   * Filters the JSON stream by subreddits, if the optional filter is configured via the config.
+   * @param line
+   * @return
+   */
+  protected def filterJsonBySubreddit(line: ByteString): Boolean = {
+    try {
+      val entity = line.utf8String.parseJson.convertTo[SubredditAuthor]
 
-    // Author is defined
-    (entity.author.isDefined && entity.author.get != "[deleted]") &&
-    // Subreddit is in the list
-      filterSubreddits(entity.subreddit)
+      // Author is defined
+      (entity.author.isDefined && entity.author.get != "[deleted]") &&
+        // Subreddit is in the list
+        filterSubreddits(entity.subreddit)
+    } catch {
+      case _: Exception => false
+    }
   }
 
   //.withAttributes(supervisionStrategy(resumingDecider))
