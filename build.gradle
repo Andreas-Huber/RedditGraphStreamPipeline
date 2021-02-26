@@ -9,9 +9,19 @@ repositories {
     mavenCentral()
 }
 
+def jgraphtVersion = '1.5.0'
 dependencies {
+    compile 'org.jgrapht:jgrapht-core:' + jgraphtVersion
+    compile 'org.jgrapht:jgrapht-io:' + jgraphtVersion
+    compile 'com.opencsv:opencsv:4.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'no.simula.umod.redditgraph.Main'
+    }
 }
 
 test {
