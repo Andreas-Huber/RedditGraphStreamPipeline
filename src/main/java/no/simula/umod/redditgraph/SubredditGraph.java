@@ -45,6 +45,7 @@ class SubRedditGraph {
                     // Undirected unique edge per user
                     // Duplicated between the users possible, but jgrapht handles that for strings
 
+                    //Todo: check if those loops can be made more efficient?
                     g.addEdge(arr[i], arr[j]);
                 }
             }
