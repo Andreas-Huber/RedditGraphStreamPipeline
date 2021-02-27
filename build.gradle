@@ -8,7 +8,6 @@ buildscript {
         classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
     }
 }
-
 plugins {
     id 'java'
     id "com.github.johnrengelman.shadow" version "6.1.0"
@@ -28,8 +27,16 @@ dependencies {
     compile 'org.jgrapht:jgrapht-core:' + jgraphtVersion
     compile 'org.jgrapht:jgrapht-io:' + jgraphtVersion
     compile 'com.opencsv:opencsv:4.1'
+    compile "com.github.luben:zstd-jni:1.4.8-6"
+    compile "org.apache.commons:commons-compress:1.20"
+    implementation 'info.picocli:picocli:4.6.1'
+    annotationProcessor 'info.picocli:picocli-codegen:4.6.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+compileJava {
+    options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
 }
 
 jar {

@@ -11,16 +11,16 @@ import org.jgrapht.nio.dot.DOTExporter;
 import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 class SubRedditGraph {
 
     final Graph<String, DefaultEdge> g = new DefaultUndirectedGraph<>(DefaultEdge.class);
 
-    public void createGraphFromCSV() throws IOException {
-        // todo: stream
-        final var subredditUser = readAll("graphs/sample-user-in-sr.csv");
+    public void createGraphFromCSV(File inputFile) throws IOException {
 
+        final var subredditUser = readAll(inputFile);
         final HashMap<String, HashSet<String>> users = new HashMap<>();
 
         for (final var entry : subredditUser) {
@@ -36,11 +36,11 @@ class SubRedditGraph {
         users.forEach((user, subreddits) -> {
             final String[] arr = new String[subreddits.size()];
             subreddits.toArray(arr);
-            System.out.println("User:" + user + "----------------------------- subreddits: " + arr.length);
+            //System.out.println("User:" + user + "----------------------------- subreddits: " + arr.length);
 
             for (int i = 0; i < arr.length; i++) {
                 for (int j = i + 1; j < arr.length; j++) {
-                    System.out.println(arr[i] + " -- " + arr[j]);
+                    //System.out.println(arr[i] + " -- " + arr[j]);
 
                     // Undirected unique edge per user
                     // Duplicated between the users possible, but jgrapht handles that for strings
@@ -74,24 +74,21 @@ class SubRedditGraph {
         g.addEdge(a, a);
     }
 
-    public void export() throws IOException {
+    public void exportDot(File outFile) throws IOException {
         final GraphExporter<String, DefaultEdge> exporter =
-                new DOTExporter<>(v -> v);
+                new DOTExporter<>(v -> v.replace(".", "_"));
         //new GraphMLExporter<>(v -> v);
 
-        final Writer writer = new FileWriter("graphs/sample.dot");
+        final Writer writer = new FileWriter(outFile);
 
         exporter.exportGraph(g, writer);
         writer.close();
     }
 
-    public List<String[]> readAll(String file) throws IOException {
+    public Iterable<String[]> readAll(File file) throws IOException {
         Reader reader = new FileReader(file);
         CSVReader csvReader = new CSVReader(reader);
-        var list = csvReader.readAll();
-        reader.close();
-        csvReader.close();
-        return list;
+        return csvReader;
     }
 }
 
