@@ -78,7 +78,7 @@ class SubRedditGraph {
 
     public void exportDot(File outFile) throws IOException {
         final GraphExporter<String, DefaultEdge> exporter =
-                new DOTExporter<>(v -> v.replace(".", "_"));
+                new DOTExporter<>(v -> '"' + v.replace(".", "_") + '"');
         //new GraphMLExporter<>(v -> v);
 
         final Writer writer = new FileWriter(outFile);
