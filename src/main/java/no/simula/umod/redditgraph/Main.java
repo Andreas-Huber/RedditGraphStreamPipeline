@@ -13,7 +13,7 @@ enum ProgramMode {
     UnweightedGraph
 }
 
-@Command(name = "rgraph", mixinStandardHelpOptions = true, version = "checksum 4.0",
+@Command(name = "rgraph", mixinStandardHelpOptions = true, version = "not versioned / latest build from master",
         description = "RedditGraph for graph generation and experiments.")
 class Main implements Callable<Integer> {
 

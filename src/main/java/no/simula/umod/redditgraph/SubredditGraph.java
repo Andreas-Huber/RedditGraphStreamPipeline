@@ -2,6 +2,7 @@ package no.simula.umod.redditgraph;
 
 
 import com.opencsv.CSVReader;
+import org.apache.commons.compress.compressors.CompressorException;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultUndirectedGraph;
@@ -18,9 +19,9 @@ class SubRedditGraph {
 
     final Graph<String, DefaultEdge> g = new DefaultUndirectedGraph<>(DefaultEdge.class);
 
-    public void createGraphFromCSV(File inputFile) throws IOException {
+    public void createGraphFromCSV(File inputFile) throws IOException, CompressorException {
 
-        final var subredditUser = readAll(inputFile);
+        final var subredditUser = FileUtils.readAll(inputFile);
         final HashMap<String, HashSet<String>> users = new HashMap<>();
 
         for (final var entry : subredditUser) {
@@ -84,12 +85,6 @@ class SubRedditGraph {
 
         exporter.exportGraph(g, writer);
         writer.close();
-    }
-
-    public Iterable<String[]> readAll(File file) throws IOException {
-        Reader reader = new FileReader(file);
-        CSVReader csvReader = new CSVReader(reader);
-        return csvReader;
     }
 }
 
