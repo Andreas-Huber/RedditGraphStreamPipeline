@@ -23,15 +23,23 @@ class Main implements Callable<Integer> {
     @Parameters(index = "1", description = "File to lad the graph from.")
     private File file;
 
-    @Option(names= {"-o", "--out-file"}, description = "Output file for the graph")
-    private File outFile;
+    @Option(names= {"--out-edge-csv"}, description = "Output file for the edge list csv.")
+    private File outEdgeCsv;
+
+    @Option(names= {"--out-dot"}, description = "Output file for the graph dot.")
+    private File outDot;
 
     @Override
     public Integer call() throws Exception {
         if(mode == ProgramMode.UnweightedGraph){
             final var subredditGraph = new SubRedditGraph();
-            subredditGraph.createGraphFromCSV(file);
-            subredditGraph.exportDot(outFile);
+            // ToDo:
+            subredditGraph.createCountListFromCsv(file);
+
+            // Todo: Compress if to large
+            // Todo: Simply parallelize if to slow?
+            subredditGraph.exportEdgeList(outEdgeCsv);
+            subredditGraph.exportDot(outDot);
         }
         else {
             throw new NotImplementedException("Mode not implemented");
