@@ -10,15 +10,13 @@ import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import org.jgrapht.nio.dot.DOTExporter;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static no.simula.umod.redditgraph.ConsoleUtils.log;
 import static no.simula.umod.redditgraph.ConsoleUtils.logDuration;
 
 class SubRedditGraph {
@@ -27,6 +25,7 @@ class SubRedditGraph {
 
     public void createCountListFromCsv(File inputFile) throws IOException, CompressorException {
         long startTime = System.nanoTime();
+        log("Start read csv to hashmap.");
         final var subredditUser = FileUtils.readAll(inputFile);
         final HashMap<String, HashSet<String>> users = new HashMap<>();
 
@@ -55,7 +54,7 @@ class SubRedditGraph {
 
                     final var edge = g.getEdge(arr[i], arr[j]);
                     if (edge != null) {
-                        edge.incrementWeight();
+                        edge.incrementNumberOfUsersInBothSubreddits();
                     } else {
                         g.addEdge(arr[i], arr[j], new Edge());
                     }
@@ -63,40 +62,30 @@ class SubRedditGraph {
             }
         });
 
-        logDuration("# Vertices " + g.vertexSet().size(), startTime);
-        logDuration("# Edges    " + g.edgeSet().size(), startTime);
-    }
-
-    public void createSample() {
-
-
-        var a = "Politics";
-        var b = "AskReddit";
-        var c = "Gaming";
-
-        g.addVertex(a);
-        g.addVertex(b);
-        g.addVertex(c);
-        g.addVertex(c);
-
-        g.addEdge(a, c);
-        g.addEdge(a, c);
-        g.addEdge(a, c);
-        g.addEdge(a, c);
-        g.addEdge(b, c);
-        g.addEdge(a, a);
+        logDuration("Finished building the graph" + g.vertexSet().size(), startTime);
+        log("# Vertices " + g.vertexSet().size());
+        log("# Edges    " + g.edgeSet().size());
     }
 
     public void exportEdgeList(File outFile) throws IOException {
         final long startTime = System.nanoTime();
-        final Writer writer = new FileWriter(outFile);
-        final var csv = new CSVWriter(writer);
+        final var writer = new FileWriter(outFile);
+        final var buffer = new BufferedWriter(writer);
+        final var csv = new CSVWriter(buffer);
+
+
 
         g.edgeSet().forEach(edge -> csv.writeNext(edge.getEdgeCsvLine()));
 
-        csv.flush();
+//        g.edgeSet().parallelStream().map(edge -> {
+//            return edge.getEdgeCsvLine();
+//        }).forEachOrdered(l -> {
+//            System.out.println(Thread.currentThread());
+//
+//            csv.writeNext(l);
+//        });
+
         csv.close();
-        writer.close();
         logDuration("Exported edge list", startTime);
     }
 
@@ -107,7 +96,7 @@ class SubRedditGraph {
 
         exporter.setEdgeAttributeProvider((edge) -> {
             final Map<String, Attribute> map = new LinkedHashMap<>();
-            map.put("weight", DefaultAttribute.createAttribute(edge.numberOfUsersInThoseSubreddits));
+            map.put("weight", DefaultAttribute.createAttribute(edge.getWeight()));
 
             return map;
         });
@@ -121,29 +110,49 @@ class SubRedditGraph {
 
     class Edge extends DefaultWeightedEdge {
 
+
         private int numberOfUsersInThoseSubreddits = 1;
+        private double weight;
 
-        @Override
-        public double getWeight() {
+        /**
+         * Uij
+         * @return
+         */
+        public int getNumberOfUsersInBothSubreddits() {
             return numberOfUsersInThoseSubreddits;
         }
-
-        public int getWeightInt() {
-            return numberOfUsersInThoseSubreddits;
+        public void incrementNumberOfUsersInBothSubreddits() {
+            numberOfUsersInThoseSubreddits++;
         }
 
+        /**
+         * i
+         * @return
+         */
         public String getSrc() {
             return this.getSource().toString();
         }
 
+        /**
+         * j
+         * @return
+         */
         public String getTar() {
             return this.getTarget().toString();
         }
 
+        /**
+         * degree i
+         * @return
+         */
         public int getSourceDegree() {
             return g.degreeOf((String) getSource());
         }
 
+        /**
+         * degree j
+         * @return
+         */
         public int getTargetDegree() {
             return g.degreeOf((String) getSource());
         }
@@ -162,28 +171,56 @@ class SubRedditGraph {
          * @param vertex to get the edge weights from
          * @return
          */
-        private int getSumOfEdgeWeightsConnectedToVertex(String vertex) {
+        private int getSumOfEdgeWeightsConnectedToVertex(final String vertex) {
             int sum = 0;
+
+            //ToDo: This could be cached in the vertex.
             for (Edge edge : g.edgesOf(vertex)) {
-                //todo: Daniel, sum of weights or sum of degrees?
-                sum += edge.getWeightInt();
+                sum += edge.getNumberOfUsersInBothSubreddits();
             }
             return sum;
         }
 
-        public void incrementWeight() {
-            numberOfUsersInThoseSubreddits++;
+        /**
+         * Wij, stateful and cached. Works only if the weight has been calculated before.
+         * @return
+         */
+        @Override
+        public double getWeight() {
+            return weight;
         }
 
+        /**
+         * Wij
+         * @return
+         */
+        public double calculateWeight(final double avgi, final double avgj) {
+            this.weight = (double)numberOfUsersInThoseSubreddits / (avgi + avgj);
+            return this.weight;
+        }
+
+
+        //todo: vertex degree, and weighted degree file. plot distribution.
+
+
         public String[] getEdgeCsvLine() {
+            final String source = getSrc();
+            final String target = getTar();
+            final int sourceDegree = g.degreeOf(source);
+            final int targetDegree = g.degreeOf(target);
+            final int weightedSourceDegree = getSumOfEdgeWeightsConnectedToVertex(source);
+            final int weightedTargetDegree = getSumOfEdgeWeightsConnectedToVertex(target);
+            final double weight = calculateWeight(weightedSourceDegree, weightedTargetDegree);
+
             return new String[]{
-                    getSrc(),
-                    getTar(),
+                    source,
+                    target,
                     String.valueOf(numberOfUsersInThoseSubreddits),
-                    String.valueOf(getSourceDegree()),
-                    String.valueOf(getTargetDegree()),
-                    String.valueOf(getWeightedSourceDegree()),
-                    String.valueOf(getWeightedTargetDegree()),
+                    String.valueOf(sourceDegree),
+                    String.valueOf(targetDegree),
+                    String.valueOf(weightedSourceDegree),
+                    String.valueOf(weightedTargetDegree),
+                    String.valueOf(weight)
             };
         }
     }

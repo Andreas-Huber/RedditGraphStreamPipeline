@@ -9,6 +9,8 @@ import picocli.CommandLine.Parameters;
 import java.io.File;
 import java.util.concurrent.Callable;
 
+import static no.simula.umod.redditgraph.ConsoleUtils.*;
+
 enum ProgramMode {
     UnweightedGraph
 }
@@ -51,7 +53,9 @@ class Main implements Callable<Integer> {
     // this example implements Callable, so parsing, error handling and handling user
     // requests for usage help or version help can be done with one line of code.
     public static void main(String... args) {
+        long startTime = System.nanoTime();
         int exitCode = new CommandLine(new Main()).execute(args);
+        logDuration("Finished program run", startTime);
         System.exit(exitCode);
     }
 }
