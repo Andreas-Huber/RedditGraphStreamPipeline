@@ -1,5 +1,7 @@
 package no.simula.umod.redditgraph;
 
+import akka.actor.ActorSystem;
+import com.typesafe.config.ConfigFactory;
 import org.apache.commons.lang3.NotImplementedException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -19,6 +21,16 @@ enum ProgramMode {
         description = "RedditGraph for graph generation and experiments.")
 class Main implements Callable<Integer> {
 
+    private final ActorSystem actorSystem;
+
+    public Main() {
+        final var config = ConfigFactory.parseString("""
+                      akka.actor.default-blocking-io-dispatcher.thread-pool-executor.fixed-pool-size = "128"
+                      akka.actor.default-dispatcher.fork-join-executor.parallelism-max = "1024"
+                """).withFallback(ConfigFactory.load());
+        actorSystem = ActorSystem.create("Graph", config);
+    }
+
     @Parameters(index = "0", description = "Valid values: ${COMPLETION-CANDIDATES}")
     private ProgramMode mode;
 
@@ -34,14 +46,23 @@ class Main implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         if(mode == ProgramMode.UnweightedGraph){
-            final var subredditGraph = new SubRedditGraph();
-            // ToDo:
+            log(Thread.currentThread());
+            final var subredditGraph = new SubRedditGraph(actorSystem);
+
+            // Import and create
             subredditGraph.createCountListFromCsv(file);
 
-            // Todo: Compress if to large
-            // Todo: Simply parallelize if to slow?
-            subredditGraph.exportEdgeList(outEdgeCsv);
-            subredditGraph.exportDot(outDot);
+            // Parallel export
+            var dotFuture = subredditGraph.exportDot(outDot);
+
+            final var startTime = System.nanoTime();
+            var csvFuture = subredditGraph.exportEdgeList(outEdgeCsv).thenRunAsync(() ->
+                    logDuration("Exported edge list", startTime)
+            ).toCompletableFuture();
+
+
+            dotFuture.join();
+            csvFuture.join();
         }
         else {
             throw new NotImplementedException("Mode not implemented");

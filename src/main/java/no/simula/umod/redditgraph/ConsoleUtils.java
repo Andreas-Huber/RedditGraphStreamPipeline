@@ -20,9 +20,8 @@ public class ConsoleUtils {
      * @param startNanoTime start time in nano seconds (usually from System.nanoTime())
      */
     public static void logDuration(final Object message, final long startNanoTime) {
-        final long duration = (long) ((System.nanoTime() - startNanoTime) / 1e9d);
 
-        System.out.println(getDateString() + "  " + message + " (" + getReadableTime(duration) + ")  " + getMemoryString());
+        System.out.println(getDateString() + "  " + message + " (" + getReadableDuration(startNanoTime) + ")  " + getMemoryString());
     }
 
     /** Get nicely formatted string of the current time */
@@ -48,17 +47,17 @@ public class ConsoleUtils {
 
     /**
      * Prints a string from nano time
-     * @param nanos
+     * @param startNanoTime
      * @return
      * @source: https://stackoverflow.com/a/45075606
      */
-    private static String getReadableTime(Long nanos){
+    private static String getReadableDuration(long startNanoTime){
+        final long duration = (long) ((System.nanoTime() - startNanoTime) / 1e9d);
 
-        long tempSec    = nanos/(1000*1000*1000);
-        long sec        = tempSec % 60;
-        long min        = (tempSec /60) % 60;
-        long hour       = (tempSec /(60*60)) % 24;
-        long day        = (tempSec / (24*60*60)) % 24;
+        final long sec        = duration % 60;
+        final long min        = (duration /60) % 60;
+        final long hour       = (duration /(60*60)) % 24;
+        final long day        = (duration / (24*60*60)) % 24;
 
         return String.format("%dd %dh %dm %ds", day,hour,min,sec);
 
