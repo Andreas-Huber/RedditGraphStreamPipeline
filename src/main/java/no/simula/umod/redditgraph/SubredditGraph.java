@@ -47,33 +47,33 @@ class SubRedditGraph {
         final HashMap<String, HashSet<String>> users = new HashMap<>(10000000);
 
 
-        var source = Flows.getFileSource(inputFile);
-        var c = source
-                .via(CsvParsing.lineScanner())
-                .via(CsvToMap.toMapAsStrings(StandardCharsets.UTF_8))
-                .map(a -> {
-                    final var arr = new String[2];
-                    a.values().toArray(arr);
-                    return arr;
-                })
-                .runForeach(entry -> {
-                    // Create all vertices (duplicates handled by jgrapht)
-                    g.addVertex(new SrVertex(entry[0]));
-
-                    // Create subreddit list per user
-                    users.putIfAbsent(entry[1], new HashSet<>());
-                    users.get(entry[1]).add(entry[0]);
-                }, actorSystem);
-
-        c.toCompletableFuture().join();
-//        for (final var entry : subredditUser) {
-//            // Create all vertices (duplicates handled by jgrapht)
-//            g.addVertex(new SrVertex(entry[0]));
+//        var source = Flows.getFileSource(inputFile);
+//        var c = source
+//                .via(CsvParsing.lineScanner())
+//                .via(CsvToMap.toMapAsStrings(StandardCharsets.UTF_8))
+//                .map(a -> {
+//                    final var arr = new String[2];
+//                    a.values().toArray(arr);
+//                    return arr;
+//                })
+//                .runForeach(entry -> {
+//                    // Create all vertices (duplicates handled by jgrapht)
+//                    g.addVertex(new SrVertex(entry[0]));
 //
-//            // Create subreddit list per user
-//            users.putIfAbsent(entry[1], new HashSet<>());
-//            users.get(entry[1]).add(entry[0]);
-//        }
+//                    // Create subreddit list per user
+//                    users.putIfAbsent(entry[1], new HashSet<>());
+//                    users.get(entry[1]).add(entry[0]);
+//                }, actorSystem);
+
+//        c.toCompletableFuture().join();
+        for (final var entry : subredditUser) {
+            // Create all vertices (duplicates handled by jgrapht)
+            g.addVertex(new SrVertex(entry[0]));
+
+            // Create subreddit list per user
+            users.putIfAbsent(entry[1], new HashSet<>());
+            users.get(entry[1]).add(entry[0]);
+        }
 
         logDuration("Finished adding vertices and create user->sr list", startTime);
         startTime = System.nanoTime();
