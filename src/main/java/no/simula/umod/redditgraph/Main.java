@@ -21,15 +21,15 @@ enum ProgramMode {
         description = "RedditGraph for graph generation and experiments.")
 class Main implements Callable<Integer> {
 
-    private final ActorSystem actorSystem;
+    private final ActorSystem actorSystem = ActorSystem.create("Graph");
 
-    public Main() {
-        final var config = ConfigFactory.parseString("""
-                      akka.actor.default-blocking-io-dispatcher.thread-pool-executor.fixed-pool-size = "128"
-                      akka.actor.default-dispatcher.fork-join-executor.parallelism-max = "1024"
-                """).withFallback(ConfigFactory.load());
-        actorSystem = ActorSystem.create("Graph", config);
-    }
+//    public Main() {
+//        final var config = ConfigFactory.parseString("""
+//                      akka.actor.default-blocking-io-dispatcher.thread-pool-executor.fixed-pool-size = "128"
+//                      akka.actor.default-dispatcher.fork-join-executor.parallelism-max = "1024"
+//                """).withFallback(ConfigFactory.load());
+//        actorSystem = ActorSystem.create("Graph", config);
+//    }
 
     @Parameters(index = "0", description = "Valid values: ${COMPLETION-CANDIDATES}")
     private ProgramMode mode;
