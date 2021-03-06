@@ -39,6 +39,7 @@ class SubRedditGraph {
 
     final Graph<SrVertex, Edge> g = new DefaultUndirectedWeightedGraph<>(Edge.class);
 
+    // user - subreddits
 
     public void createCountListFromCsv(File inputFile) throws IOException, CompressorException {
         long startTime = System.nanoTime();
@@ -66,6 +67,7 @@ class SubRedditGraph {
 //                }, actorSystem);
 
 //        c.toCompletableFuture().join();
+        // read vertices
         for (final var entry : subredditUser) {
             // Create all vertices (duplicates handled by jgrapht)
             g.addVertex(new SrVertex(entry[0]));
@@ -80,9 +82,14 @@ class SubRedditGraph {
 
         // Add all the sr edges per user -> subreddit x subreddit
         users.forEach((user, subreddits) -> {
+            // list of subreddits for user
             final String[] arr = new String[subreddits.size()];
             subreddits.toArray(arr);
+            //            final arrsubreddits.toArray(new String[0]);
+
             subreddits.clear(); //todo: Does that make sense to "free up some ram"
+
+
 
             for (int i = 0; i < arr.length; i++) {
                 for (int j = i + 1; j < arr.length; j++) {
@@ -109,7 +116,8 @@ class SubRedditGraph {
         });
 
         //todo check why edge vertexes are empty.
-//        g.edgeSet().stream().forEach(edge -> log(edge.getSrc().getSumOfEdgeWeightsConnectedToVertex()));
+     g.edgeSet().stream().forEach(edge -> log(edge.getSrc().getSumOfEdgeWeightsConnectedToVertex()));
+     g.vertexSet().stream().forEach(vert -> log(vert.getSumOfEdgeWeightsConnectedToVertex()));
 
         logDuration("Finished calculating the vertex scores", startTime);
 
@@ -135,8 +143,11 @@ class SubRedditGraph {
     public CompletableFuture exportDot(File outFile) throws IOException {
         //todo: Export Vertex attribute
         // degree
-        // getSumOfEdgeWeightsConnectedToVertex()
-        // weightedSourceDegree
+        // getSumOfEdgeWeightsConnectedToVertex() - weightedDegree
+        // One loop:
+        // degreeDegree (summe aller degrees der neighbouring vertex)
+        // weightedDegreeDegree
+        // local clustering coefficient
 
 
         return CompletableFuture.runAsync(() -> {
@@ -147,7 +158,7 @@ class SubRedditGraph {
             exporter.setVertexAttributeProvider(vertex -> {
                 final Map<String, Attribute> map = new LinkedHashMap<>();
                 map.put("degree", DefaultAttribute.createAttribute(g.degreeOf(vertex)));
-                map.put("sew", DefaultAttribute.createAttribute(vertex.getSumOfEdgeWeightsConnectedToVertex()));
+                map.put("weightedDegree", DefaultAttribute.createAttribute(vertex.getSumOfEdgeWeightsConnectedToVertex()));
 
                 return map;
             });
@@ -298,14 +309,14 @@ class SubRedditGraph {
         }
 
         public Collection<String> getEdgeCsvLine() {
-            final SrVertex source = getSrc();
-            final SrVertex target = getTar();
+            final SrVertex source = g.getEdgeSource(this);
+            final SrVertex target = g.getEdgeTarget(this);
             final int sourceDegree = g.degreeOf(source);
             final int targetDegree = g.degreeOf(target);
             final double blub = source.getSumOfEdgeWeightsConnectedToVertex();
             final double weightedSourceDegree = source.getSumOfEdgeWeightsConnectedToVertex() / (double)sourceDegree;
             final double weightedTargetDegree = target.getSumOfEdgeWeightsConnectedToVertex() / (double)targetDegree;
-
+//            final g graph
             final double weight = calculateWeight(weightedSourceDegree, weightedTargetDegree);
 
             return List.of(
