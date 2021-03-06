@@ -308,25 +308,23 @@ class SubRedditGraph {
         }
 
         public Collection<String> getEdgeCsvLine() {
-            final SrVertex source = g.getEdgeSource(this);
-            final SrVertex target = g.getEdgeTarget(this);
+            final SrVertex source = getSrc();
+            final SrVertex target = getTar();
             final int sourceDegree = g.degreeOf(source);
             final int targetDegree = g.degreeOf(target);
-            final double blub = source.getSumOfEdgeWeightsConnectedToVertex();
             final double weightedSourceDegree = source.getSumOfEdgeWeightsConnectedToVertex() / (double)sourceDegree;
             final double weightedTargetDegree = target.getSumOfEdgeWeightsConnectedToVertex() / (double)targetDegree;
-//            final g graph
             final double weight = calculateWeight(weightedSourceDegree, weightedTargetDegree);
 
             return List.of(
-                    source.toString(),
-                    target.toString(),
-                    String.valueOf(numberOfUsersInThoseSubreddits),
-                    String.valueOf(sourceDegree),
-                    String.valueOf(targetDegree),
-                    String.valueOf(weightedSourceDegree),
-                    String.valueOf(weightedTargetDegree),
-                    String.valueOf(weight)
+                    source.toString(), // i
+                    target.toString(), // j
+                    String.valueOf(numberOfUsersInThoseSubreddits), // Uij
+                    String.valueOf(sourceDegree), // degree(i)
+                    String.valueOf(targetDegree), // degree(j)
+                    String.valueOf(weightedSourceDegree), // weightedDegree(i)
+                    String.valueOf(weightedTargetDegree), // weightedDegree(j)
+                    String.valueOf(weight) // Wij
             );
         }
     }

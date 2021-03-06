@@ -39,13 +39,13 @@ class Main implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         if(mode == ProgramMode.UnweightedGraph){
-            log(Thread.currentThread());
             final var subredditGraph = new SubRedditGraph(actorSystem);
 
             // Import and create
             subredditGraph.createCountListFromCsv(file);
 
             // Parallel export
+            // todo: parallel export only works if the edge weight is set before the csv export!
             var dotFuture = subredditGraph.exportDot(outDot);
 
             final var startTime = System.nanoTime();
