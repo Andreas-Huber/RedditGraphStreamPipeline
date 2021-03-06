@@ -8,6 +8,9 @@ import akka.stream.alpakka.csv.javadsl.CsvQuotingStyle;
 import akka.stream.javadsl.Source;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.jgrapht.Graph;
+import org.jgrapht.Graphs;
+import org.jgrapht.alg.scoring.ClusteringCoefficient;
+import org.jgrapht.graph.DefaultDirectedWeightedGraph;
 import org.jgrapht.graph.DefaultUndirectedWeightedGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.nio.Attribute;
@@ -43,7 +46,6 @@ class SubRedditGraph {
         log("Start read csv to hashmap.");
         final var subredditUser = FileUtils.readAll(inputFile);
         final HashMap<String, HashSet<String>> users = new HashMap<>(10000000);
-
 
 //        var source = Flows.getFileSource(inputFile);
 //        var c = source
@@ -191,6 +193,11 @@ class SubRedditGraph {
         private final String subreddit;
         private int sumOfEdgeWeightsConnectedToVertex = 0;
 
+
+
+        private int degreeDegree = 0;
+        private double weightedDegreeDegree = 0D;
+
         public SrVertex(String subreddit) {
             this.subreddit = subreddit;
         }
@@ -227,7 +234,19 @@ class SubRedditGraph {
 
         public void calculateScores(){
             this.sumOfEdgeWeightsConnectedToVertex = calculateSumOfEdgeWeightsConnectedToVertex();
-            // ToDo: Other scores
+        }
+
+        public void calcDegreeDegrees() {
+            var ddd = 0;
+            var wdd = 0D;
+            for (var vtx : Graphs.neighborListOf(g, this)) {
+                for (var edge : g.edgesOf(vtx)) {
+                    wdd += edge.weight;
+                    ddd += 1;
+                }
+            }
+            degreeDegree = ddd;
+            weightedDegreeDegree = wdd;
         }
 
         public int getSumOfEdgeWeightsConnectedToVertex() {
@@ -236,6 +255,20 @@ class SubRedditGraph {
 
         public void setSumOfEdgeWeightsConnectedToVertex(int sumOfEdgeWeightsConnectedToVertex) {
             this.sumOfEdgeWeightsConnectedToVertex = sumOfEdgeWeightsConnectedToVertex;
+        }
+
+        private double computeLocalClusteringCoefficient() {
+            var neighbourhood = Graphs.neighborSetOf(g, this);
+            final double k = neighbourhood.size();
+            double numberTriplets = 0;
+            for (var p : neighbourhood)
+                for (var q : neighbourhood)
+                    if (g.containsEdge(p, q))
+                        numberTriplets++;
+            if (k <= 1)
+                return 0.0;
+            else
+                return numberTriplets / (k * (k - 1));
         }
     }
 
