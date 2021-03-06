@@ -115,7 +115,9 @@ class SubRedditGraph {
 
 
         vertexMap.values().parallelStream().forEach(v -> {
-            v.calculateScores();
+            v.calculateScores(); // todo: calculate vertex score
+            //todo: Calculate edge weights
+            //todo Calculate vertex degree degree
         });
 
         logDuration("Finished calculating the vertex scores", startTime);
@@ -239,7 +241,7 @@ class SubRedditGraph {
 
     class Edge extends DefaultWeightedEdge {
 
-        private int numberOfUsersInThoseSubreddits = 1;
+        private int numberOfUsersInThoseSubreddits = 1; // Uij
         private double weight;
 
         /**
@@ -247,6 +249,12 @@ class SubRedditGraph {
          */
         public int getNumberOfUsersInBothSubreddits() {
             return numberOfUsersInThoseSubreddits;
+        }
+        /**
+         * Uij
+         */
+        public void setNumberOfUsersInThoseSubreddits(int numberOfUsersInThoseSubreddits) {
+            this.numberOfUsersInThoseSubreddits = numberOfUsersInThoseSubreddits;
         }
 
         public void incrementNumberOfUsersInBothSubreddits() {
@@ -296,7 +304,7 @@ class SubRedditGraph {
          */
         @Override
         public double getWeight() {
-            return weight;
+            return calculateWeight( ge
         }
 
         /**
