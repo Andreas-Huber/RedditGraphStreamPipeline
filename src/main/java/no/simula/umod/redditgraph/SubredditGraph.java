@@ -31,6 +31,7 @@ import static no.simula.umod.redditgraph.ConsoleUtils.log;
 import static no.simula.umod.redditgraph.ConsoleUtils.logDuration;
 
 class SubRedditGraph {
+
     private final ActorSystem actorSystem;
 
     public SubRedditGraph(ActorSystem actorSystem) {
@@ -40,6 +41,14 @@ class SubRedditGraph {
     final Graph<SrVertex, Edge> g = new DefaultUndirectedWeightedGraph<>(Edge.class);
 
     // user - subreddits
+
+
+
+    Map<String, SrVertex> map =  new HashMap<>();
+
+
+
+
 
     public void createCountListFromCsv(File inputFile) throws IOException, CompressorException {
         long startTime = System.nanoTime();
@@ -70,11 +79,19 @@ class SubRedditGraph {
         // read vertices
         for (final var entry : subredditUser) {
             // Create all vertices (duplicates handled by jgrapht)
-            g.addVertex(new SrVertex(entry[0]));
+
+
 
             // Create subreddit list per user
             users.putIfAbsent(entry[1], new HashSet<>());
             users.get(entry[1]).add(entry[0]);
+
+            if (map.containsKey(entry[0]))
+                continue;
+
+            var vertex = new SrVertex(entry[0]);
+            map.put(entry[0],vertex);
+            g.addVertex(vertex);
         }
 
         logDuration("Finished adding vertices and create user->sr list", startTime);
@@ -96,8 +113,10 @@ class SubRedditGraph {
                     // Undirected unique edge per user
                     // Duplicated between the users possible, but jgrapht handles that for strings
 
-                    final var src = new SrVertex(arr[i]);
-                    final var tar = new SrVertex(arr[j]);
+//                    final var src = new SrVertex(arr[i]);
+//                    final var tar = new SrVertex(arr[j]);
+                    final var src = map.get(arr[i]);
+                    final var tar = map.get(arr[j]);
                     final var edge = g.getEdge(src, tar);
                     if (edge != null) {
                         edge.incrementNumberOfUsersInBothSubreddits();
