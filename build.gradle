@@ -64,6 +64,13 @@ jar {
     }
 }
 
+shadowJar {
+    transform(com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer) {
+        resource = 'reference.conf'
+    }
+    with jar
+}
+
 test {
     useJUnitPlatform()
 }

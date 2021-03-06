@@ -4,12 +4,8 @@ package no.simula.umod.redditgraph;
 import akka.actor.ActorSystem;
 import akka.stream.IOResult;
 import akka.stream.alpakka.csv.javadsl.CsvFormatting;
-import akka.stream.alpakka.csv.javadsl.CsvParsing;
 import akka.stream.alpakka.csv.javadsl.CsvQuotingStyle;
-import akka.stream.alpakka.csv.javadsl.CsvToMap;
-import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
-import akka.util.ByteString;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultUndirectedWeightedGraph;
@@ -32,23 +28,15 @@ import static no.simula.umod.redditgraph.ConsoleUtils.logDuration;
 
 class SubRedditGraph {
 
+    final Graph<SrVertex, Edge> g = new DefaultUndirectedWeightedGraph<>(Edge.class);
+    // subreddit - Subreddit Vertex
+    final Map<String, SrVertex> vertexMap =  new HashMap<>(10000);
+
     private final ActorSystem actorSystem;
 
     public SubRedditGraph(ActorSystem actorSystem) {
         this.actorSystem = actorSystem;
     }
-
-    final Graph<SrVertex, Edge> g = new DefaultUndirectedWeightedGraph<>(Edge.class);
-
-    // user - subreddits
-
-
-
-    Map<String, SrVertex> map =  new HashMap<>();
-
-
-
-
 
     public void createCountListFromCsv(File inputFile) throws IOException, CompressorException {
         long startTime = System.nanoTime();
@@ -76,21 +64,20 @@ class SubRedditGraph {
 //                }, actorSystem);
 
 //        c.toCompletableFuture().join();
-        // read vertices
+
+        // the subreddit,user file
         for (final var entry : subredditUser) {
-            // Create all vertices (duplicates handled by jgrapht)
-
-
 
             // Create subreddit list per user
             users.putIfAbsent(entry[1], new HashSet<>());
             users.get(entry[1]).add(entry[0]);
 
-            if (map.containsKey(entry[0]))
+            // Create a unique vertex per subreddit
+            if (vertexMap.containsKey(entry[0]))
                 continue;
 
-            var vertex = new SrVertex(entry[0]);
-            map.put(entry[0],vertex);
+            final var vertex = new SrVertex(entry[0]);
+            vertexMap.put(entry[0],vertex);
             g.addVertex(vertex);
         }
 
@@ -111,12 +98,8 @@ class SubRedditGraph {
             for (int i = 0; i < arr.length; i++) {
                 for (int j = i + 1; j < arr.length; j++) {
                     // Undirected unique edge per user
-                    // Duplicated between the users possible, but jgrapht handles that for strings
-
-//                    final var src = new SrVertex(arr[i]);
-//                    final var tar = new SrVertex(arr[j]);
-                    final var src = map.get(arr[i]);
-                    final var tar = map.get(arr[j]);
+                    final var src = vertexMap.get(arr[i]);
+                    final var tar = vertexMap.get(arr[j]);
                     final var edge = g.getEdge(src, tar);
                     if (edge != null) {
                         edge.incrementNumberOfUsersInBothSubreddits();
@@ -130,13 +113,10 @@ class SubRedditGraph {
         logDuration("Finished building the graph", startTime);
         startTime = System.nanoTime();
 
-        g.vertexSet().parallelStream().forEach(v -> {
+
+        vertexMap.values().parallelStream().forEach(v -> {
             v.calculateScores();
         });
-
-        //todo check why edge vertexes are empty.
-     g.edgeSet().stream().forEach(edge -> log(edge.getSrc().getSumOfEdgeWeightsConnectedToVertex()));
-     g.vertexSet().stream().forEach(vert -> log(vert.getSumOfEdgeWeightsConnectedToVertex()));
 
         logDuration("Finished calculating the vertex scores", startTime);
 
@@ -245,7 +225,7 @@ class SubRedditGraph {
 
         public void calculateScores(){
             this.sumOfEdgeWeightsConnectedToVertex = calculateSumOfEdgeWeightsConnectedToVertex();
-
+            // ToDo: Other scores
         }
 
         public int getSumOfEdgeWeightsConnectedToVertex() {

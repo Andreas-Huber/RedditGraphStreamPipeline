@@ -1,7 +1,6 @@
 package no.simula.umod.redditgraph;
 
 import akka.actor.ActorSystem;
-import com.typesafe.config.ConfigFactory;
 import org.apache.commons.lang3.NotImplementedException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -11,25 +10,19 @@ import picocli.CommandLine.Parameters;
 import java.io.File;
 import java.util.concurrent.Callable;
 
-import static no.simula.umod.redditgraph.ConsoleUtils.*;
+import static no.simula.umod.redditgraph.ConsoleUtils.log;
+import static no.simula.umod.redditgraph.ConsoleUtils.logDuration;
 
 enum ProgramMode {
     UnweightedGraph
 }
 
+@SuppressWarnings("unused")
 @Command(name = "rgraph", mixinStandardHelpOptions = true, version = "not versioned / latest build from master",
         description = "RedditGraph for graph generation and experiments.")
 class Main implements Callable<Integer> {
 
     private final ActorSystem actorSystem = ActorSystem.create("Graph");
-
-//    public Main() {
-//        final var config = ConfigFactory.parseString("""
-//                      akka.actor.default-blocking-io-dispatcher.thread-pool-executor.fixed-pool-size = "128"
-//                      akka.actor.default-dispatcher.fork-join-executor.parallelism-max = "1024"
-//                """).withFallback(ConfigFactory.load());
-//        actorSystem = ActorSystem.create("Graph", config);
-//    }
 
     @Parameters(index = "0", description = "Valid values: ${COMPLETION-CANDIDATES}")
     private ProgramMode mode;
@@ -60,7 +53,6 @@ class Main implements Callable<Integer> {
                     logDuration("Exported edge list", startTime)
             ).toCompletableFuture();
 
-
             dotFuture.join();
             csvFuture.join();
         }
@@ -71,8 +63,10 @@ class Main implements Callable<Integer> {
         return 0;
     }
 
-    // this example implements Callable, so parsing, error handling and handling user
-    // requests for usage help or version help can be done with one line of code.
+    /**
+     * Parses the command line arguments an runs the callable
+     * @param args
+     */
     public static void main(String... args) {
         long startTime = System.nanoTime();
         int exitCode = new CommandLine(new Main()).execute(args);
