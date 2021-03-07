@@ -340,6 +340,16 @@ class SubRedditGraph {
             return calculateWeight( ge
         }
 
+        public void calculateIndependentScores(){
+            this.sumOfEdgeWeightsConnectedToVertex = calculateSumOfEdgeWeightsConnectedToVertex();
+            // ToDo: Other scores
+        }
+
+        public void calculateScoresDependentOnVertex(){
+
+            // ToDo: Other scores
+        }
+
         /**
          * Wij
          */
