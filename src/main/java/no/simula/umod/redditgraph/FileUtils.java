@@ -25,7 +25,6 @@ public class FileUtils {
 
     public static Iterable<String[]> readAll(java.io.File file) throws IOException, CompressorException {
         Reader reader = getFileReaderBasedOnType(file);
-        CSVReader csvReader = new CSVReader(reader);
-        return csvReader;
+        return new CSVReader(reader);
     }
 }

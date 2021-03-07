@@ -30,9 +30,9 @@ import static no.simula.umod.redditgraph.ConsoleUtils.logDuration;
 
 class SubRedditGraph {
 
-    final Graph<SrVertex, Edge> g = new DefaultUndirectedWeightedGraph<>(Edge.class);
+    private final Graph<SrVertex, Edge> g = new DefaultUndirectedWeightedGraph<>(Edge.class);
     // subreddit - Subreddit Vertex
-    final Map<String, SrVertex> vertexMap =  new HashMap<>(10000);
+    private final Map<String, SrVertex> vertexMap =  new HashMap<>(10000);
 
     private final ActorSystem actorSystem;
 
@@ -130,23 +130,43 @@ class SubRedditGraph {
     }
 
 
+    public CompletionStage<IOResult> exportVertexList(File outFile) throws IOException, CompressorException {
+
+        final var fileSink = Flows.getFileSink(outFile);
+        final var csvFlow = CsvFormatting.format(CsvFormatting.COMMA,
+                CsvFormatting.DOUBLE_QUOTE,
+                CsvFormatting.BACKSLASH,
+                "\n",
+                CsvQuotingStyle.REQUIRED,
+                StandardCharsets.UTF_8,
+                Optional.empty());
+        return Source.from(vertexMap.values())
+                .map(SrVertex::getVertexCsvLine)
+                .via(csvFlow)
+                .async()
+                .runWith(fileSink, actorSystem);
+    }
 
     public CompletionStage<IOResult> exportEdgeList(File outFile) throws IOException, CompressorException {
 
         final var fileSink = Flows.getFileSink(outFile);
-        final var csvFlow = CsvFormatting.format(CsvFormatting.COMMA,CsvFormatting.DOUBLE_QUOTE, CsvFormatting.BACKSLASH, "\n", CsvQuotingStyle.REQUIRED, StandardCharsets.UTF_8, Optional.empty());
+        final var csvFlow = CsvFormatting.format(CsvFormatting.COMMA,
+                CsvFormatting.DOUBLE_QUOTE,
+                CsvFormatting.BACKSLASH,
+                "\n",
+                CsvQuotingStyle.REQUIRED,
+                StandardCharsets.UTF_8,
+                Optional.empty());
         return Source.from(g.edgeSet())
-//                .mapAsyncUnordered(10, edge -> CompletableFuture.supplyAsync(() -> edge.getEdgeCsvLine()))
                 .map(Edge::getEdgeCsvLine)
                 .via(csvFlow)
                 .async()
                 .runWith(fileSink, actorSystem);
     }
 
-    public Future<Void> exportDot(File outFile) {
+    public CompletionStage<Void> exportDot(File outFile) {
 
         return CompletableFuture.runAsync(() -> {
-            final long startTime = System.nanoTime();
             final DOTExporter<SrVertex, Edge> exporter =
                     new DOTExporter<>(v -> '"' + v.toString().replace(".", "_") + '"');
 
@@ -177,12 +197,11 @@ class SubRedditGraph {
                 e.printStackTrace();
             }
 
-            logDuration("Exported dot", startTime);
         });
     }
 
 
-    //todo: vertex degree, and weighted degree file. plot distribution.
+    //todo: export vertex degree, and weighted degree file. plot distribution.
     class SrVertex{
 
         private final String subreddit;
@@ -205,6 +224,14 @@ class SubRedditGraph {
 
         public int getSumOfEdgeWeightsConnectedToVertex() {
             return this.sumOfEdgeWeightsConnectedToVertex;
+        }
+
+        public int getDegree(){
+            return g.degreeOf(this);
+        }
+
+        public double getWeightedDegree(){
+            return getSumOfEdgeWeightsConnectedToVertex() / (double)g.degreeOf(this);
         }
 
         public void setSumOfEdgeWeightsConnectedToVertex(int sumOfEdgeWeightsConnectedToVertex) {
@@ -296,6 +323,18 @@ class SubRedditGraph {
             else
                 return numberTriplets / (k * (k - 1));
         }
+
+        public Collection<String> getVertexCsvLine() {
+            return List.of(
+                    subreddit,
+                    String.valueOf(sumOfEdgeWeightsConnectedToVertex), // Ui
+                    String.valueOf(getDegree()), // degree(i)
+                    String.valueOf(getWeightedDegree()), // weightedDegree (i)
+                    String.valueOf(degreeDegree), // degreeDegree(i)
+                    String.valueOf(weightedDegreeDegree), // weightedDegreeDegree
+                    String.valueOf(localClusteringCoefficient) // local clustering coefficient
+            );
+        }
     }
 
     class Edge extends DefaultWeightedEdge {
@@ -304,7 +343,6 @@ class SubRedditGraph {
         private double weightedTargetDegree;            // weightedDegree(i)
         private double weightedSourceDegree;            // weightedDegree(j)
         private double weight;                          // Wij
-
 
         /**
          * i

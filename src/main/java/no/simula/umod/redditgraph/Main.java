@@ -10,7 +10,6 @@ import picocli.CommandLine.Parameters;
 import java.io.File;
 import java.util.concurrent.Callable;
 
-import static no.simula.umod.redditgraph.ConsoleUtils.log;
 import static no.simula.umod.redditgraph.ConsoleUtils.logDuration;
 
 enum ProgramMode {
@@ -33,6 +32,9 @@ class Main implements Callable<Integer> {
     @Option(names= {"--out-edge-csv"}, description = "Output file for the edge list csv.")
     private File outEdgeCsv;
 
+    @Option(names= {"--out-vertex-csv"}, description = "Output file for the vertex list csv.")
+    private File outVertexCsv;
+
     @Option(names= {"--out-dot"}, description = "Output file for the graph dot.")
     private File outDot;
 
@@ -45,16 +47,23 @@ class Main implements Callable<Integer> {
             subredditGraph.createCountListFromCsv(file);
 
             // Parallel export
-            // todo: parallel export only works if the edge weight is set before the csv export!
-            var dotFuture = subredditGraph.exportDot(outDot);
-
             final var startTime = System.nanoTime();
-            var csvFuture = subredditGraph.exportEdgeList(outEdgeCsv).thenRunAsync(() ->
+
+            var dotFuture = subredditGraph.exportDot(outDot).thenRunAsync(() ->
+                    logDuration("Exported dot", startTime)
+            ).toCompletableFuture();
+
+            var edgeCsvFuture = subredditGraph.exportEdgeList(outEdgeCsv).thenRunAsync(() ->
                     logDuration("Exported edge list", startTime)
             ).toCompletableFuture();
 
+            var vertexCsvFuture = subredditGraph.exportVertexList(outVertexCsv).thenRunAsync(() ->
+                    logDuration("Exported vertex list", startTime)
+            ).toCompletableFuture();
+
             dotFuture.join();
-            csvFuture.join();
+            edgeCsvFuture.join();
+            vertexCsvFuture.join();
         }
         else {
             throw new NotImplementedException("Mode not implemented");
@@ -65,7 +74,7 @@ class Main implements Callable<Integer> {
 
     /**
      * Parses the command line arguments an runs the callable
-     * @param args
+     * @param args command line arguments
      */
     public static void main(String... args) {
         long startTime = System.nanoTime();

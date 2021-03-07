@@ -46,10 +46,10 @@ public class ConsoleUtils {
     }
 
     /**
-     * Prints a string from nano time
-     * @param startNanoTime
-     * @return
-     * @source: https://stackoverflow.com/a/45075606
+     * Prints a duration string from nano time
+     * @param startNanoTime start time
+     * @return e.g 1d 14h 12m 44s
+     * @apiNote source: https://stackoverflow.com/a/45075606
      */
     private static String getReadableDuration(long startNanoTime){
         final long duration = (long) ((System.nanoTime() - startNanoTime) / 1e9d);
