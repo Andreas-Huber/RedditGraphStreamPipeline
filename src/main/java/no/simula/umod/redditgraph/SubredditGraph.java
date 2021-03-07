@@ -9,8 +9,6 @@ import akka.stream.javadsl.Source;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
-import org.jgrapht.alg.scoring.ClusteringCoefficient;
-import org.jgrapht.graph.DefaultDirectedWeightedGraph;
 import org.jgrapht.graph.DefaultUndirectedWeightedGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.nio.Attribute;
@@ -25,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Future;
 
 import static no.simula.umod.redditgraph.ConsoleUtils.log;
 import static no.simula.umod.redditgraph.ConsoleUtils.logDuration;
@@ -91,10 +90,7 @@ class SubRedditGraph {
             // list of subreddits for user
             final String[] arr = new String[subreddits.size()];
             subreddits.toArray(arr);
-            //            final arrsubreddits.toArray(new String[0]);
-
             subreddits.clear(); //todo: Does that make sense to "free up some ram"
-
 
 
             for (int i = 0; i < arr.length; i++) {
@@ -115,14 +111,19 @@ class SubRedditGraph {
         logDuration("Finished building the graph", startTime);
         startTime = System.nanoTime();
 
+        // Calculate vertex scores that are not dependent on edge scores
+        vertexMap.values().parallelStream().forEach(SrVertex::calculateIndependentScores);
+        logDuration("Finished calculating the independent vertex scores", startTime);
+        startTime = System.nanoTime();
 
-        vertexMap.values().parallelStream().forEach(v -> {
-            v.calculateScores(); // todo: calculate vertex score
-            //todo: Calculate edge weights
-            //todo Calculate vertex degree degree
-        });
+        // Calculate edge scores that depend on vertex scores
+        g.edgeSet().parallelStream().forEach(Edge::calculateScoresDependentOnVertex);
+        logDuration("Finished calculating the edge scores that depend on vertex scores", startTime);
+        startTime = System.nanoTime();
 
-        logDuration("Finished calculating the vertex scores", startTime);
+        // Calculate vertex scores that are dependent on edge scores (e.g. weight)
+        vertexMap.values().parallelStream().forEach(SrVertex::calculateScoresDependentOnEdgeScores);
+        logDuration("Finished calculating the edge dependent vertex scores", startTime);
 
         log("# Vertices " + g.vertexSet().size());
         log("# Edges    " + g.edgeSet().size());
@@ -134,24 +135,15 @@ class SubRedditGraph {
 
         final var fileSink = Flows.getFileSink(outFile);
         final var csvFlow = CsvFormatting.format(CsvFormatting.COMMA,CsvFormatting.DOUBLE_QUOTE, CsvFormatting.BACKSLASH, "\n", CsvQuotingStyle.REQUIRED, StandardCharsets.UTF_8, Optional.empty());
-        final var c = Source.from(g.edgeSet())
+        return Source.from(g.edgeSet())
 //                .mapAsyncUnordered(10, edge -> CompletableFuture.supplyAsync(() -> edge.getEdgeCsvLine()))
                 .map(Edge::getEdgeCsvLine)
                 .via(csvFlow)
                 .async()
                 .runWith(fileSink, actorSystem);
-        return c;
     }
 
-    public CompletableFuture exportDot(File outFile) throws IOException {
-        //todo: Export Vertex attribute
-        // degree
-        // getSumOfEdgeWeightsConnectedToVertex() - weightedDegree
-        // One loop:
-        // degreeDegree (summe aller degrees der neighbouring vertex)
-        // weightedDegreeDegree
-        // local clustering coefficient
-
+    public Future<Void> exportDot(File outFile) {
 
         return CompletableFuture.runAsync(() -> {
             final long startTime = System.nanoTime();
@@ -162,6 +154,9 @@ class SubRedditGraph {
                 final Map<String, Attribute> map = new LinkedHashMap<>();
                 map.put("degree", DefaultAttribute.createAttribute(g.degreeOf(vertex)));
                 map.put("weightedDegree", DefaultAttribute.createAttribute(vertex.getSumOfEdgeWeightsConnectedToVertex()));
+                map.put("degreeDegree", DefaultAttribute.createAttribute(vertex.getDegreeDegree()));
+                map.put("weightedDegreeDegree", DefaultAttribute.createAttribute(vertex.getWeightedDegreeDegree()));
+                map.put("localClusteringCoefficient", DefaultAttribute.createAttribute(vertex.getLocalClusteringCoefficient()));
 
                 return map;
             });
@@ -192,14 +187,48 @@ class SubRedditGraph {
 
         private final String subreddit;
         private int sumOfEdgeWeightsConnectedToVertex = 0;
-
-
-
-        private int degreeDegree = 0;
-        private double weightedDegreeDegree = 0D;
+        private int degreeDegree;
+        private double weightedDegreeDegree;
+        private double localClusteringCoefficient;
 
         public SrVertex(String subreddit) {
             this.subreddit = subreddit;
+        }
+
+        public String getSubreddit() {
+            return subreddit;
+        }
+
+        public int getDegreeDegree() {
+            return degreeDegree;
+        }
+
+        public int getSumOfEdgeWeightsConnectedToVertex() {
+            return this.sumOfEdgeWeightsConnectedToVertex;
+        }
+
+        public void setSumOfEdgeWeightsConnectedToVertex(int sumOfEdgeWeightsConnectedToVertex) {
+            this.sumOfEdgeWeightsConnectedToVertex = sumOfEdgeWeightsConnectedToVertex;
+        }
+
+        public void setDegreeDegree(int degreeDegree) {
+            this.degreeDegree = degreeDegree;
+        }
+
+        public double getWeightedDegreeDegree() {
+            return weightedDegreeDegree;
+        }
+
+        public void setWeightedDegreeDegree(double weightedDegreeDegree) {
+            this.weightedDegreeDegree = weightedDegreeDegree;
+        }
+
+        public double getLocalClusteringCoefficient() {
+            return localClusteringCoefficient;
+        }
+
+        public void setLocalClusteringCoefficient(double localClusteringCoefficient) {
+            this.localClusteringCoefficient = localClusteringCoefficient;
         }
 
         @Override
@@ -220,6 +249,15 @@ class SubRedditGraph {
             return subreddit.hashCode();
         }
 
+        public void calculateIndependentScores(){
+            this.sumOfEdgeWeightsConnectedToVertex = calculateSumOfEdgeWeightsConnectedToVertex();
+        }
+
+        public void calculateScoresDependentOnEdgeScores(){
+            computeDegreeDegrees();
+            this.localClusteringCoefficient =  computeLocalClusteringCoefficient();
+        }
+
         /**
          * Sum up all the edge weights connected a vertex
          */
@@ -232,16 +270,12 @@ class SubRedditGraph {
             return sum;
         }
 
-        public void calculateScores(){
-            this.sumOfEdgeWeightsConnectedToVertex = calculateSumOfEdgeWeightsConnectedToVertex();
-        }
-
-        public void calcDegreeDegrees() {
-            var ddd = 0;
-            var wdd = 0D;
+        private void computeDegreeDegrees() {
+            int ddd = 0;
+            double wdd = 0d;
             for (var vtx : Graphs.neighborListOf(g, this)) {
                 for (var edge : g.edgesOf(vtx)) {
-                    wdd += edge.weight;
+                    wdd += edge.getWeight();
                     ddd += 1;
                 }
             }
@@ -249,16 +283,8 @@ class SubRedditGraph {
             weightedDegreeDegree = wdd;
         }
 
-        public int getSumOfEdgeWeightsConnectedToVertex() {
-            return this.sumOfEdgeWeightsConnectedToVertex;
-        }
-
-        public void setSumOfEdgeWeightsConnectedToVertex(int sumOfEdgeWeightsConnectedToVertex) {
-            this.sumOfEdgeWeightsConnectedToVertex = sumOfEdgeWeightsConnectedToVertex;
-        }
-
         private double computeLocalClusteringCoefficient() {
-            var neighbourhood = Graphs.neighborSetOf(g, this);
+            final var neighbourhood = Graphs.neighborSetOf(g, this);
             final double k = neighbourhood.size();
             double numberTriplets = 0;
             for (var p : neighbourhood)
@@ -266,7 +292,7 @@ class SubRedditGraph {
                     if (g.containsEdge(p, q))
                         numberTriplets++;
             if (k <= 1)
-                return 0.0;
+                return 0.0d;
             else
                 return numberTriplets / (k * (k - 1));
         }
@@ -275,7 +301,24 @@ class SubRedditGraph {
     class Edge extends DefaultWeightedEdge {
 
         private int numberOfUsersInThoseSubreddits = 1; // Uij
-        private double weight;
+        private double weightedTargetDegree;            // weightedDegree(i)
+        private double weightedSourceDegree;            // weightedDegree(j)
+        private double weight;                          // Wij
+
+
+        /**
+         * i
+         */
+        public SrVertex getSrc() {
+            return (SrVertex) this.getSource();
+        }
+
+        /**
+         * j
+         */
+        public SrVertex getTar() {
+            return (SrVertex) this.getTarget();
+        }
 
         /**
          * Uij
@@ -290,23 +333,11 @@ class SubRedditGraph {
             this.numberOfUsersInThoseSubreddits = numberOfUsersInThoseSubreddits;
         }
 
+        /**
+         * Increment Uij
+         */
         public void incrementNumberOfUsersInBothSubreddits() {
             numberOfUsersInThoseSubreddits++;
-        }
-
-        /**
-         * i
-         */
-        public SrVertex getSrc() {
-            return (SrVertex) this.getSource();
-        }
-
-        /**
-         * j
-         * @return
-         */
-        public SrVertex getTar() {
-            return (SrVertex) this.getTarget();
         }
 
         /**
@@ -323,39 +354,69 @@ class SubRedditGraph {
             return g.degreeOf((SrVertex) getSource());
         }
 
-        public int getWeightedSourceDegree() {
-            return getSrc().getSumOfEdgeWeightsConnectedToVertex();
+        /**
+         * weightedDegree(i)
+         */
+        public double getWeightedTargetDegree() {
+            return weightedTargetDegree;
         }
 
-        public int getWeightedTargetDegree() {
-            return getSrc().getSumOfEdgeWeightsConnectedToVertex();
+        /**
+         * weightedDegree(i)
+         */
+        public void setWeightedTargetDegree(double weightedTargetDegree) {
+            this.weightedTargetDegree = weightedTargetDegree;
+        }
+
+        /**
+         * weightedDegree(j)
+         */
+        public double getWeightedSourceDegree() {
+            return weightedSourceDegree;
+        }
+
+        /**
+         * weightedDegree(j)
+         */
+        public void setWeightedSourceDegree(double weightedSourceDegree) {
+            this.weightedSourceDegree = weightedSourceDegree;
         }
 
 
         /**
-         * Wij, stateful and cached. Works only if the weight has been calculated before.
+         * Wij, stateful and cached. Works only if the weight has been calculated or set before.
          */
         @Override
         public double getWeight() {
-            return calculateWeight( ge
-        }
-
-        public void calculateIndependentScores(){
-            this.sumOfEdgeWeightsConnectedToVertex = calculateSumOfEdgeWeightsConnectedToVertex();
-            // ToDo: Other scores
-        }
-
-        public void calculateScoresDependentOnVertex(){
-
-            // ToDo: Other scores
+            return weight;
         }
 
         /**
          * Wij
          */
-        public double calculateWeight(final double avgi, final double avgj) {
-            this.weight = (double)numberOfUsersInThoseSubreddits / (avgi + avgj); // todo: (avgi + avgj) / 2 ???
-            return this.weight;
+        public void setWeight(double weight){
+            this.weight = weight;
+        }
+
+        /**
+         * Calculates weights after the vertex scores have ben calculated
+         */
+        public void calculateScoresDependentOnVertex(){
+            final SrVertex source = getSrc();
+            final SrVertex target = getTar();
+            final int sourceDegree = g.degreeOf(source);
+            final int targetDegree = g.degreeOf(target);
+
+            this.weightedSourceDegree = source.getSumOfEdgeWeightsConnectedToVertex() / (double)sourceDegree;
+            this.weightedTargetDegree = target.getSumOfEdgeWeightsConnectedToVertex() / (double)targetDegree;
+            calculateWeight(weightedSourceDegree, weightedTargetDegree);
+        }
+
+        /**
+         * Wij
+         */
+        private void calculateWeight(final double avgi, final double avgj) {
+            this.weight = (double)numberOfUsersInThoseSubreddits / ((avgi + avgj) / 2); // todo: (avgi + avgj) / 2 yes no???
         }
 
         public Collection<String> getEdgeCsvLine() {
@@ -363,9 +424,6 @@ class SubRedditGraph {
             final SrVertex target = getTar();
             final int sourceDegree = g.degreeOf(source);
             final int targetDegree = g.degreeOf(target);
-            final double weightedSourceDegree = source.getSumOfEdgeWeightsConnectedToVertex() / (double)sourceDegree;
-            final double weightedTargetDegree = target.getSumOfEdgeWeightsConnectedToVertex() / (double)targetDegree;
-            final double weight = calculateWeight(weightedSourceDegree, weightedTargetDegree);
 
             return List.of(
                     source.toString(), // i
