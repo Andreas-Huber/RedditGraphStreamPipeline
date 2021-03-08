@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Future;
 
 import static no.simula.umod.redditgraph.ConsoleUtils.log;
 import static no.simula.umod.redditgraph.ConsoleUtils.logDuration;
@@ -43,7 +42,7 @@ class SubRedditGraph {
     public void createCountListFromCsv(File inputFile) throws IOException, CompressorException {
         long startTime = System.nanoTime();
         log("Start read csv to hashmap.");
-        final var subredditUser = FileUtils.readAll(inputFile);
+        final var subredditUser = FileUtils.readCsv(inputFile);
         final HashMap<String, HashSet<String>> users = new HashMap<>(10000000);
 
 //        var source = Flows.getFileSource(inputFile);
@@ -147,21 +146,34 @@ class SubRedditGraph {
                 .runWith(fileSink, actorSystem);
     }
 
-    public CompletionStage<IOResult> exportEdgeList(File outFile) throws IOException, CompressorException {
+    public CompletionStage<Void> exportEdgeList(File outFile) throws IOException, CompressorException {
 
-        final var fileSink = Flows.getFileSink(outFile);
-        final var csvFlow = CsvFormatting.format(CsvFormatting.COMMA,
-                CsvFormatting.DOUBLE_QUOTE,
-                CsvFormatting.BACKSLASH,
-                "\n",
-                CsvQuotingStyle.REQUIRED,
-                StandardCharsets.UTF_8,
-                Optional.empty());
-        return Source.from(g.edgeSet())
-                .map(Edge::getEdgeCsvLine)
-                .via(csvFlow)
-                .async()
-                .runWith(fileSink, actorSystem);
+//        final var fileSink = Flows.getFileSink(outFile);
+//        final var csvFlow = CsvFormatting.format(CsvFormatting.COMMA,
+//                CsvFormatting.DOUBLE_QUOTE,
+//                CsvFormatting.BACKSLASH,
+//                "\n",
+//                CsvQuotingStyle.REQUIRED,
+//                StandardCharsets.UTF_8,
+//                Optional.empty());
+//        return Source.from(g.edgeSet())
+//                .map(Edge::getEdgeCsvLine)
+//                .via(csvFlow)
+//                .async()
+//                .runWith(fileSink, actorSystem);
+
+        return CompletableFuture.runAsync(() -> {
+            try {
+                final var writer = FileUtils.createWriter(outFile);
+
+                for (Edge edge : g.edgeSet()) {
+                    writer.write(String.join(",", edge.getEdgeCsvLine()));
+                }
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public CompletionStage<Void> exportDot(File outFile) {

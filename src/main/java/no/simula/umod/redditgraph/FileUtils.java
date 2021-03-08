@@ -23,7 +23,14 @@ public class FileUtils {
         }
     }
 
-    public static Iterable<String[]> readAll(java.io.File file) throws IOException, CompressorException {
+
+    public static Writer createWriter(java.io.File file) throws IOException {
+        final var fileWriter = new FileWriter(file);
+        final var bufferedWriter = new BufferedWriter(fileWriter);
+        return bufferedWriter;
+    }
+
+    public static Iterable<String[]> readCsv(java.io.File file) throws IOException, CompressorException {
         Reader reader = getFileReaderBasedOnType(file);
         return new CSVReader(reader);
     }
