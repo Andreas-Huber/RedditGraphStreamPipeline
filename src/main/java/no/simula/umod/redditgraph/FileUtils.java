@@ -2,10 +2,13 @@ package no.simula.umod.redditgraph;
 
 import com.opencsv.CSVReader;
 import com.google.common.io.Files;
+import com.opencsv.CSVWriter;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 
 import java.io.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 public class FileUtils {
 
@@ -24,14 +27,30 @@ public class FileUtils {
     }
 
 
-    public static Writer createWriter(java.io.File file) throws IOException {
+    public static CSVWriter createCsvWriter(java.io.File file) throws IOException {
         final var fileWriter = new FileWriter(file);
         final var bufferedWriter = new BufferedWriter(fileWriter);
-        return bufferedWriter;
+        final var csvWriter = new CSVWriter(bufferedWriter);
+        return csvWriter;
     }
 
     public static Iterable<String[]> readCsv(java.io.File file) throws IOException, CompressorException {
         Reader reader = getFileReaderBasedOnType(file);
         return new CSVReader(reader);
+    }
+
+    public static CompletionStage<Void> exportCsv(Iterable<? extends ToCsv> entities, File outFile) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                final var writer = FileUtils.createCsvWriter(outFile);
+
+                for (var edge : entities) {
+                    writer.writeNext(edge.toCsvLine(), false);
+                }
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

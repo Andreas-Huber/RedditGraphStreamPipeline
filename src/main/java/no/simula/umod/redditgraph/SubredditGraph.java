@@ -1,11 +1,6 @@
 package no.simula.umod.redditgraph;
 
 
-import akka.actor.ActorSystem;
-import akka.stream.IOResult;
-import akka.stream.alpakka.csv.javadsl.CsvFormatting;
-import akka.stream.alpakka.csv.javadsl.CsvQuotingStyle;
-import akka.stream.javadsl.Source;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
@@ -15,12 +10,14 @@ import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import org.jgrapht.nio.dot.DOTExporter;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -33,37 +30,11 @@ class SubRedditGraph {
     // subreddit - Subreddit Vertex
     private final Map<String, SrVertex> vertexMap =  new HashMap<>(10000);
 
-    private final ActorSystem actorSystem;
-
-    public SubRedditGraph(ActorSystem actorSystem) {
-        this.actorSystem = actorSystem;
-    }
-
-    public void createCountListFromCsv(File inputFile) throws IOException, CompressorException {
+        public void createCountListFromCsv(File inputFile) throws IOException, CompressorException {
         long startTime = System.nanoTime();
         log("Start read csv to hashmap.");
         final var subredditUser = FileUtils.readCsv(inputFile);
         final HashMap<String, HashSet<String>> users = new HashMap<>(10000000);
-
-//        var source = Flows.getFileSource(inputFile);
-//        var c = source
-//                .via(CsvParsing.lineScanner())
-//                .via(CsvToMap.toMapAsStrings(StandardCharsets.UTF_8))
-//                .map(a -> {
-//                    final var arr = new String[2];
-//                    a.values().toArray(arr);
-//                    return arr;
-//                })
-//                .runForeach(entry -> {
-//                    // Create all vertices (duplicates handled by jgrapht)
-//                    g.addVertex(new SrVertex(entry[0]));
-//
-//                    // Create subreddit list per user
-//                    users.putIfAbsent(entry[1], new HashSet<>());
-//                    users.get(entry[1]).add(entry[0]);
-//                }, actorSystem);
-
-//        c.toCompletableFuture().join();
 
         // the subreddit,user file
         for (final var entry : subredditUser) {
@@ -129,51 +100,12 @@ class SubRedditGraph {
     }
 
 
-    public CompletionStage<IOResult> exportVertexList(File outFile) throws IOException, CompressorException {
-
-        final var fileSink = Flows.getFileSink(outFile);
-        final var csvFlow = CsvFormatting.format(CsvFormatting.COMMA,
-                CsvFormatting.DOUBLE_QUOTE,
-                CsvFormatting.BACKSLASH,
-                "\n",
-                CsvQuotingStyle.REQUIRED,
-                StandardCharsets.UTF_8,
-                Optional.empty());
-        return Source.from(vertexMap.values())
-                .map(SrVertex::getVertexCsvLine)
-                .via(csvFlow)
-                .async()
-                .runWith(fileSink, actorSystem);
+    public CompletionStage<Void> exportVertexList(File outFile) {
+        return FileUtils.exportCsv(vertexMap.values(), outFile);
     }
 
-    public CompletionStage<Void> exportEdgeList(File outFile) throws IOException, CompressorException {
-
-//        final var fileSink = Flows.getFileSink(outFile);
-//        final var csvFlow = CsvFormatting.format(CsvFormatting.COMMA,
-//                CsvFormatting.DOUBLE_QUOTE,
-//                CsvFormatting.BACKSLASH,
-//                "\n",
-//                CsvQuotingStyle.REQUIRED,
-//                StandardCharsets.UTF_8,
-//                Optional.empty());
-//        return Source.from(g.edgeSet())
-//                .map(Edge::getEdgeCsvLine)
-//                .via(csvFlow)
-//                .async()
-//                .runWith(fileSink, actorSystem);
-
-        return CompletableFuture.runAsync(() -> {
-            try {
-                final var writer = FileUtils.createWriter(outFile);
-
-                for (Edge edge : g.edgeSet()) {
-                    writer.write(String.join(",", edge.getEdgeCsvLine()));
-                }
-                writer.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+    public CompletionStage<Void> exportEdgeList(File outFile) {
+        return FileUtils.exportCsv(g.edgeSet(), outFile);
     }
 
     public CompletionStage<Void> exportDot(File outFile) {
@@ -202,19 +134,18 @@ class SubRedditGraph {
 
 
             try {
-                final Writer writer = new FileWriter(outFile);
-                exporter.exportGraph(g, writer);
-                writer.close();
+                final var fileWriter = new FileWriter(outFile);
+                final var bufferedWriter = new BufferedWriter(fileWriter);
+                exporter.exportGraph(g, bufferedWriter);
+                bufferedWriter.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         });
     }
 
 
-    //todo: export vertex degree, and weighted degree file. plot distribution.
-    class SrVertex{
+    class SrVertex implements ToCsv{
 
         private final String subreddit;
         private int sumOfEdgeWeightsConnectedToVertex = 0;
@@ -336,8 +267,8 @@ class SubRedditGraph {
                 return numberTriplets / (k * (k - 1));
         }
 
-        public Collection<String> getVertexCsvLine() {
-            return List.of(
+        public String[] toCsvLine() {
+            return new String[]{
                     subreddit,
                     String.valueOf(sumOfEdgeWeightsConnectedToVertex), // Ui
                     String.valueOf(getDegree()), // degree(i)
@@ -345,16 +276,27 @@ class SubRedditGraph {
                     String.valueOf(degreeDegree), // degreeDegree(i)
                     String.valueOf(weightedDegreeDegree), // weightedDegreeDegree
                     String.valueOf(localClusteringCoefficient) // local clustering coefficient
-            );
+            };
         }
     }
 
-    class Edge extends DefaultWeightedEdge {
+    class Edge extends DefaultWeightedEdge implements ToCsv {
 
+        private String sourceName; // i
+        private String targetName; // j
         private int numberOfUsersInThoseSubreddits = 1; // Uij
+
+        private int sourceDegree; // degree(i)
+        private int targetDegree; // degree(j)
+
         private double weightedTargetDegree;            // weightedDegree(i)
         private double weightedSourceDegree;            // weightedDegree(j)
+
+        private double avgWeightedTargetEdgeWeight;
+        private double avgWeightedSourceEdgeWeight;
+
         private double weight;                          // Wij
+
 
         /**
          * i
@@ -394,14 +336,14 @@ class SubRedditGraph {
          * degree i
          */
         public int getSourceDegree() {
-            return g.degreeOf((SrVertex) getSource());
+            return sourceDegree;
         }
 
         /**
          * degree j
          */
         public int getTargetDegree() {
-            return g.degreeOf((SrVertex) getSource());
+            return targetDegree;
         }
 
         /**
@@ -432,6 +374,21 @@ class SubRedditGraph {
             this.weightedSourceDegree = weightedSourceDegree;
         }
 
+        public double getAvgWeightedTargetEdgeWeight() {
+            return avgWeightedTargetEdgeWeight;
+        }
+
+        public void setAvgWeightedTargetEdgeWeight(double avgWeightedTargetEdgeWeight) {
+            this.avgWeightedTargetEdgeWeight = avgWeightedTargetEdgeWeight;
+        }
+
+        public double getAvgWeightedSourceEdgeWeight() {
+            return avgWeightedSourceEdgeWeight;
+        }
+
+        public void setAvgWeightedSourceEdgeWeight(double avgWeightedSourceEdgeWeight) {
+            this.avgWeightedSourceEdgeWeight = avgWeightedSourceEdgeWeight;
+        }
 
         /**
          * Wij, stateful and cached. Works only if the weight has been calculated or set before.
@@ -454,11 +411,24 @@ class SubRedditGraph {
         public void calculateScoresDependentOnVertex(){
             final SrVertex source = getSrc();
             final SrVertex target = getTar();
-            final int sourceDegree = g.degreeOf(source);
-            final int targetDegree = g.degreeOf(target);
 
-            this.weightedSourceDegree = source.getSumOfEdgeWeightsConnectedToVertex() / (double)sourceDegree;
-            this.weightedTargetDegree = target.getSumOfEdgeWeightsConnectedToVertex() / (double)targetDegree;
+            this.sourceName = source.subreddit;
+            this.targetName = target.subreddit;
+            this.sourceDegree = g.degreeOf(source);
+            this.targetDegree = g.degreeOf(target);
+
+            this.weightedSourceDegree =
+                    source.getSumOfEdgeWeightsConnectedToVertex();
+
+            this.weightedTargetDegree =
+                    target.getSumOfEdgeWeightsConnectedToVertex();
+
+            this.avgWeightedSourceEdgeWeight =
+                    (source.getSumOfEdgeWeightsConnectedToVertex() / (double)sourceDegree);
+
+            this.avgWeightedTargetEdgeWeight =
+                    (target.getSumOfEdgeWeightsConnectedToVertex() / (double)targetDegree);
+
             calculateWeight(weightedSourceDegree, weightedTargetDegree);
         }
 
@@ -469,22 +439,20 @@ class SubRedditGraph {
             this.weight = (double)numberOfUsersInThoseSubreddits / ((avgi + avgj) / 2); // todo: (avgi + avgj) / 2 yes no???
         }
 
-        public Collection<String> getEdgeCsvLine() {
-            final SrVertex source = getSrc();
-            final SrVertex target = getTar();
-            final int sourceDegree = g.degreeOf(source);
-            final int targetDegree = g.degreeOf(target);
+        public String[] toCsvLine() {
 
-            return List.of(
-                    source.toString(), // i
-                    target.toString(), // j
+            return new String[] {
+                    sourceName, // i
+                    targetName, // j
                     String.valueOf(numberOfUsersInThoseSubreddits), // Uij
                     String.valueOf(sourceDegree), // degree(i)
                     String.valueOf(targetDegree), // degree(j)
                     String.valueOf(weightedSourceDegree), // weightedDegree(i)
                     String.valueOf(weightedTargetDegree), // weightedDegree(j)
+                    String.valueOf(avgWeightedSourceEdgeWeight), // avgWeightedSourceEdgeWeight
+                    String.valueOf(avgWeightedTargetEdgeWeight), // avgWeightedTargetEdgeWeight
                     String.valueOf(weight) // Wij
-            );
+            };
         }
     }
 }

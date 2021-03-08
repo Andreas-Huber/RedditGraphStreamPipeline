@@ -1,6 +1,5 @@
 package no.simula.umod.redditgraph;
 
-import akka.actor.ActorSystem;
 import org.apache.commons.lang3.NotImplementedException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -21,8 +20,6 @@ enum ProgramMode {
         description = "RedditGraph for graph generation and experiments.")
 class Main implements Callable<Integer> {
 
-    private final ActorSystem actorSystem = ActorSystem.create("Graph");
-
     @Parameters(index = "0", description = "Valid values: ${COMPLETION-CANDIDATES}")
     private ProgramMode mode;
 
@@ -41,7 +38,7 @@ class Main implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         if(mode == ProgramMode.UnweightedGraph){
-            final var subredditGraph = new SubRedditGraph(actorSystem);
+            final var subredditGraph = new SubRedditGraph();
 
             // Import and create
             subredditGraph.createCountListFromCsv(file);

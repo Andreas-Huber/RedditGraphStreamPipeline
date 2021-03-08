@@ -27,18 +27,11 @@ dependencies {
 }
 
 def versions = [
-        AkkaVersion: "2.6.13",
-        ScalaBinary: "2.13",
         AlpakkaVersion: "2.0.2",
         Jgrapht: "1.5.0",
 ]
 
 dependencies {
-    implementation platform("com.typesafe.akka:akka-bom_${versions.ScalaBinary}:${versions.AkkaVersion}")
-    implementation "com.typesafe.akka:akka-stream_${versions.ScalaBinary}:${versions.AkkaVersion}"
-    implementation "com.lightbend.akka:akka-stream-alpakka-file_${versions.ScalaBinary}:${versions.AlpakkaVersion}"
-    implementation "com.lightbend.akka:akka-stream-alpakka-csv_${versions.ScalaBinary}:${versions.AlpakkaVersion}"
-
     implementation "org.jgrapht:jgrapht-core:${versions.Jgrapht}"
     implementation "org.jgrapht:jgrapht-io:${versions.Jgrapht}"
 
