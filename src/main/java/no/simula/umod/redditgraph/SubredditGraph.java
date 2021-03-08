@@ -14,10 +14,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -30,27 +27,31 @@ class SubRedditGraph {
     // subreddit - Subreddit Vertex
     private final Map<String, SrVertex> vertexMap =  new HashMap<>(10000);
 
-        public void createCountListFromCsv(File inputFile) throws IOException, CompressorException {
+        public void createCountListFromCsv(List<File> inputFile) throws IOException, CompressorException {
         long startTime = System.nanoTime();
         log("Start read csv to hashmap.");
-        final var subredditUser = FileUtils.readCsv(inputFile);
         final HashMap<String, HashSet<String>> users = new HashMap<>(10000000);
 
-        // the subreddit,user file
-        for (final var entry : subredditUser) {
+        // read the subreddit,user files
+        for (File file : inputFile) {
+            final var subredditUser = FileUtils.readCsv(file);
 
-            // Create subreddit list per user
-            users.putIfAbsent(entry[1], new HashSet<>());
-            users.get(entry[1]).add(entry[0]);
+            for (final var entry : subredditUser) {
 
-            // Create a unique vertex per subreddit
-            if (vertexMap.containsKey(entry[0]))
-                continue;
+                // Create subreddit list per user
+                users.putIfAbsent(entry[1], new HashSet<>());
+                users.get(entry[1]).add(entry[0]);
 
-            final var vertex = new SrVertex(entry[0]);
-            vertexMap.put(entry[0],vertex);
-            g.addVertex(vertex);
+                // Create a unique vertex per subreddit
+                if (vertexMap.containsKey(entry[0]))
+                    continue;
+
+                final var vertex = new SrVertex(entry[0]);
+                vertexMap.put(entry[0],vertex);
+                g.addVertex(vertex);
+            }
         }
+
 
         logDuration("Finished adding vertices and create user->sr list", startTime);
         startTime = System.nanoTime();
