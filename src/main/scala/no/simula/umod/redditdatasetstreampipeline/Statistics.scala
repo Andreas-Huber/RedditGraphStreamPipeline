@@ -208,7 +208,9 @@ class Statistics(actorSystem: ActorSystem, config: Config) extends DatasetRun(ac
 
   /** Create a file sink based on the experiment */
   private def createStatisticsSink(): Sink[ByteString, Future[IOResult]] = {
-    val outFile = Paths.get(config.statisticsOutDir.getAbsolutePath, s"${config.experiment}.csv").toFile
+    val suffix = if(!config.experimentSuffix.isBlank) s"_${config.experimentSuffix}" else ""
+    val fileName = s"${config.experiment}$suffix.csv"
+    val outFile = Paths.get(config.statisticsOutDir.getAbsolutePath, fileName).toFile
     println(s"Writing to file:    $outFile")
 
     getFileSink(outFile)

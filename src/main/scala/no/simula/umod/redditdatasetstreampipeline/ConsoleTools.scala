@@ -14,6 +14,7 @@ object ConsoleTools {
       f"M:${runtime.maxMemory / gb}"
     memory
   }
+
   /**
    * Logg the message with including the time
    * @param message message to log

@@ -118,6 +118,11 @@ object Main extends App {
             .action((_, c) => c.copy(experiment = Experiment.UsersInSubreddits))
             .text("Experiment to count the users that made at least one contribution in a subreddit. A contribution is a post or comment."),
 
+          opt[String]("experiment-suffix")
+            .valueName("<suffix>")
+            .action((x, c) => c.copy(experimentSuffix = x))
+            .text("Experiment out file suffix, e.g. to append a distinct value like a year."),
+
           opt[File]("statistics-out")
             .valueName("<dir>")
             .action((x, c) => c.copy(statisticsOutDir = x))

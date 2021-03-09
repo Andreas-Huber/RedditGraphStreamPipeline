@@ -32,6 +32,7 @@ case class Config (
 
                     // Statistics options
                     experiment: Experiment = Experiment.None,
+                    experimentSuffix: String = "",
                     statisticsOutDir: File = new File(System.getProperty("user.home"))
 )
 

@@ -102,8 +102,8 @@ object Flows {
     val fileOutputStream = new FileOutputStream(fileName)
     val bufferedOutputStream = new BufferedOutputStream(fileOutputStream)
 
-    val compressorInputStream = new CompressorStreamFactory()
+    val compressorOutputStream = new CompressorStreamFactory()
       .createCompressorOutputStream(CompressorStreamFactory.ZSTANDARD, bufferedOutputStream)
-    StreamConverters.fromOutputStream(() => compressorInputStream)
+    StreamConverters.fromOutputStream(() => compressorOutputStream)
   }
 }
