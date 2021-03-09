@@ -102,11 +102,34 @@ class SubRedditGraph {
 
 
     public CompletionStage<Void> exportVertexList(File outFile) {
-        return FileUtils.exportCsv(vertexMap.values(), outFile);
+        final var headers = new String[] {
+                "i",
+                "Ui",
+                "degree",
+                "weighted-degree",
+                "degree-degree",
+                "weighted-degree-degree",
+                "local-clustering-coefficient"
+        };
+
+        return FileUtils.exportCsv(vertexMap.values(), outFile, headers);
     }
 
     public CompletionStage<Void> exportEdgeList(File outFile) {
-        return FileUtils.exportCsv(g.edgeSet(), outFile);
+        final var headers = new String[] {
+                "i",
+                "j",
+                "U_ij",
+                "degree_i",
+                "degree_j",
+                "weighted-degree_i",
+                "weighted-degree_j",
+                "avg-weighted-edge-weight_i",
+                "avg-weighted-edge-weight_j",
+                "W_ij"
+        };
+
+        return FileUtils.exportCsv(g.edgeSet(), outFile, headers);
     }
 
     public CompletionStage<Void> exportDot(File outFile) {
@@ -283,12 +306,12 @@ class SubRedditGraph {
 
     class Edge extends DefaultWeightedEdge implements ToCsv {
 
-        private String sourceName; // i
-        private String targetName; // j
+        private String sourceName;                      // i
+        private String targetName;                      // j
         private int numberOfUsersInThoseSubreddits = 1; // Uij
 
-        private int sourceDegree; // degree(i)
-        private int targetDegree; // degree(j)
+        private int sourceDegree;                       // degree(i)
+        private int targetDegree;                       // degree(j)
 
         private double weightedTargetDegree;            // weightedDegree(i)
         private double weightedSourceDegree;            // weightedDegree(j)
@@ -441,7 +464,6 @@ class SubRedditGraph {
         }
 
         public String[] toCsvLine() {
-
             return new String[] {
                     sourceName, // i
                     targetName, // j

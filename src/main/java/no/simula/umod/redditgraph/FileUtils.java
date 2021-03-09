@@ -26,23 +26,16 @@ public class FileUtils {
         }
     }
 
-
-    public static CSVWriter createCsvWriter(java.io.File file) throws IOException {
-        final var fileWriter = new FileWriter(file);
-        final var bufferedWriter = new BufferedWriter(fileWriter);
-        final var csvWriter = new CSVWriter(bufferedWriter);
-        return csvWriter;
-    }
-
     public static Iterable<String[]> readCsv(java.io.File file) throws IOException, CompressorException {
         Reader reader = getFileReaderBasedOnType(file);
         return new CSVReader(reader);
     }
 
-    public static CompletionStage<Void> exportCsv(Iterable<? extends ToCsv> entities, File outFile) {
+    public static CompletionStage<Void> exportCsv(Iterable<? extends ToCsv> entities, File outFile, String[] header) {
         return CompletableFuture.runAsync(() -> {
             try {
                 final var writer = FileUtils.createCsvWriter(outFile);
+                writer.writeNext(header, false);
 
                 for (var edge : entities) {
                     writer.writeNext(edge.toCsvLine(), false);
@@ -52,5 +45,12 @@ public class FileUtils {
                 e.printStackTrace();
             }
         });
+    }
+
+    private static CSVWriter createCsvWriter(java.io.File file) throws IOException {
+        final var fileWriter = new FileWriter(file);
+        final var bufferedWriter = new BufferedWriter(fileWriter);
+        final var csvWriter = new CSVWriter(bufferedWriter);
+        return csvWriter;
     }
 }
