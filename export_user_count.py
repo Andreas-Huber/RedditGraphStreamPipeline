@@ -1,13 +1,9 @@
 """
 Export data from experiments csv structured like "subreddit,count".
 """
-from python_settings import settings
-import settings as local_settings
+from settings_load import *
 import pandas as pd
 import os
-
-settings.configure(local_settings)
-assert settings.configured
 
 
 def load_users_count_df(csv_name: str) -> pd.DataFrame:
