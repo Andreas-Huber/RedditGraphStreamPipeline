@@ -1,6 +1,9 @@
 package no.simula.umod.redditgraph;
 
 
+import com.opencsv.bean.CsvBindByName;
+import com.opencsv.bean.CsvToBean;
+import com.opencsv.bean.CsvToBeanBuilder;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
@@ -17,6 +20,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 
 import static no.simula.umod.redditgraph.ConsoleUtils.log;
 import static no.simula.umod.redditgraph.ConsoleUtils.logDuration;
@@ -25,9 +29,9 @@ class SubRedditGraph {
 
     private final Graph<SrVertex, Edge> g = new DefaultUndirectedWeightedGraph<>(Edge.class);
     // subreddit - Subreddit Vertex
-    private final Map<String, SrVertex> vertexMap =  new HashMap<>(10000);
+    private final Map<String, SrVertex> vertexMap = new HashMap<>(10000);
 
-        public void createCountListFromCsv(List<File> inputFile) throws IOException, CompressorException {
+    public void createGraphFromUserSubredditCsv(List<File> inputFile) throws IOException, CompressorException {
         long startTime = System.nanoTime();
         log("Start read csv to hashmap.");
         final HashMap<String, HashSet<String>> users = new HashMap<>(10000000);
@@ -47,7 +51,7 @@ class SubRedditGraph {
                     continue;
 
                 final var vertex = new SrVertex(entry[0]);
-                vertexMap.put(entry[0],vertex);
+                vertexMap.put(entry[0], vertex);
                 g.addVertex(vertex);
             }
         }
@@ -61,7 +65,7 @@ class SubRedditGraph {
             // list of subreddits for user
             final String[] arr = new String[subreddits.size()];
             subreddits.toArray(arr);
-            subreddits.clear(); //todo: Does that make sense to "free up some ram"
+            subreddits.clear(); //todo: Does that make sense to "free up some ram"?
 
 
             for (int i = 0; i < arr.length; i++) {
@@ -100,9 +104,33 @@ class SubRedditGraph {
         log("# Edges    " + g.edgeSet().size());
     }
 
+    public void loadGraphFromVertexEdgeList(List<File> inputFile) throws IOException, CompressorException {
+
+
+        final var vertexFile = inputFile.stream().filter(f -> f.getName().contains("vertex")).findFirst().get();
+        final var edgeFile = inputFile.stream().filter(f -> f.getName().contains("edge")).findFirst().get();
+
+        final var reader = FileUtils.getFileReaderBasedOnType(vertexFile);
+        final Stream<Tst> vtxStream = new CsvToBeanBuilder(reader)
+                .withType(Tst.class)
+                .withOrderedResults(false)
+                .build()
+                .stream();
+
+        vtxStream.forEach(v -> {
+            log(v);
+        });
+
+
+
+
+
+
+
+    }
 
     public CompletionStage<Void> exportVertexList(File outFile) {
-        final var headers = new String[] {
+        final var headers = new String[]{
                 "i",
                 "Ui",
                 "degree",
@@ -116,7 +144,7 @@ class SubRedditGraph {
     }
 
     public CompletionStage<Void> exportEdgeList(File outFile) {
-        final var headers = new String[] {
+        final var headers = new String[]{
                 "i",
                 "j",
                 "U_ij",
@@ -168,15 +196,20 @@ class SubRedditGraph {
         });
     }
 
+    public class SrVertex implements ToCsv {
 
-    class SrVertex implements ToCsv{
-
-        private final String subreddit;
+        @CsvBindByName(column = "i", required = true)
+        private String subreddit;
+//        @CsvBindByName(column = "Ui", required = true)
         private int sumOfEdgeWeightsConnectedToVertex = 0;
+//        @CsvBindByName(column = "degree-degree", required = true)
         private int degreeDegree;
+//        @CsvBindByName(column = "weighted-degree-degree", required = true)
         private double weightedDegreeDegree;
+//        @CsvBindByName(column = "local-clustering-coefficient", required = true)
         private double localClusteringCoefficient;
 
+        public SrVertex(){}
         public SrVertex(String subreddit) {
             this.subreddit = subreddit;
         }
@@ -185,26 +218,32 @@ class SubRedditGraph {
             return subreddit;
         }
 
-        public int getDegreeDegree() {
-            return degreeDegree;
+        public void setSubreddit(String subreddit) {
+            this.subreddit = subreddit;
         }
 
         public int getSumOfEdgeWeightsConnectedToVertex() {
             return this.sumOfEdgeWeightsConnectedToVertex;
         }
 
-        public int getDegree(){
-            return g.degreeOf(this);
-        }
-
-        public double getWeightedDegree(){
-            return getSumOfEdgeWeightsConnectedToVertex() / (double)g.degreeOf(this);
-        }
-
         public void setSumOfEdgeWeightsConnectedToVertex(int sumOfEdgeWeightsConnectedToVertex) {
             this.sumOfEdgeWeightsConnectedToVertex = sumOfEdgeWeightsConnectedToVertex;
         }
 
+
+        public int getDegree() {
+            return g.degreeOf(this);
+        }
+
+        public double getWeightedDegree() {
+            return getSumOfEdgeWeightsConnectedToVertex() / (double) g.degreeOf(this);
+        }
+
+
+
+        public int getDegreeDegree() {
+            return degreeDegree;
+        }
         public void setDegreeDegree(int degreeDegree) {
             this.degreeDegree = degreeDegree;
         }
@@ -243,13 +282,13 @@ class SubRedditGraph {
             return subreddit.hashCode();
         }
 
-        public void calculateIndependentScores(){
+        public void calculateIndependentScores() {
             this.sumOfEdgeWeightsConnectedToVertex = calculateSumOfEdgeWeightsConnectedToVertex();
         }
 
-        public void calculateScoresDependentOnEdgeScores(){
+        public void calculateScoresDependentOnEdgeScores() {
             computeDegreeDegrees();
-            this.localClusteringCoefficient =  computeLocalClusteringCoefficient();
+            this.localClusteringCoefficient = computeLocalClusteringCoefficient();
         }
 
         /**
@@ -304,21 +343,31 @@ class SubRedditGraph {
         }
     }
 
-    class Edge extends DefaultWeightedEdge implements ToCsv {
-
+    public class Edge extends DefaultWeightedEdge implements ToCsv {
+        @CsvBindByName(column = "i", required = true)
         private String sourceName;                      // i
+        @CsvBindByName(column = "j", required = true)
         private String targetName;                      // j
+        @CsvBindByName(column = "U_ij", required = true)
         private int numberOfUsersInThoseSubreddits = 1; // Uij
 
+        @CsvBindByName(column = "degree_i", required = true)
         private int sourceDegree;                       // degree(i)
+        @CsvBindByName(column = "degree_j", required = true)
         private int targetDegree;                       // degree(j)
 
-        private double weightedTargetDegree;            // weightedDegree(i)
-        private double weightedSourceDegree;            // weightedDegree(j)
+        @CsvBindByName(column = "weighted-degree_i", required = true)
+        private double weightedSourceDegree;            // weightedDegree(i)
+        @CsvBindByName(column = "weighted-degree_j", required = true)
+        private double weightedTargetDegree;            // weightedDegree(j)
 
-        private double avgWeightedTargetEdgeWeight;
+        @CsvBindByName(column = "avg-weighted-edge-weight_i", required = true)
         private double avgWeightedSourceEdgeWeight;
+        @CsvBindByName(column = "avg-weighted-edge-weight_j", required = true)
+        private double avgWeightedTargetEdgeWeight;
 
+
+        @CsvBindByName(column = "W_ij", required = true)
         private double weight;                          // Wij
 
 
@@ -342,6 +391,7 @@ class SubRedditGraph {
         public int getNumberOfUsersInBothSubreddits() {
             return numberOfUsersInThoseSubreddits;
         }
+
         /**
          * Uij
          */
@@ -425,14 +475,14 @@ class SubRedditGraph {
         /**
          * Wij
          */
-        public void setWeight(double weight){
+        public void setWeight(double weight) {
             this.weight = weight;
         }
 
         /**
          * Calculates weights after the vertex scores have ben calculated
          */
-        public void calculateScoresDependentOnVertex(){
+        public void calculateScoresDependentOnVertex() {
             final SrVertex source = getSrc();
             final SrVertex target = getTar();
 
@@ -448,10 +498,10 @@ class SubRedditGraph {
                     target.getSumOfEdgeWeightsConnectedToVertex();
 
             this.avgWeightedSourceEdgeWeight =
-                    (source.getSumOfEdgeWeightsConnectedToVertex() / (double)sourceDegree);
+                    (source.getSumOfEdgeWeightsConnectedToVertex() / (double) sourceDegree);
 
             this.avgWeightedTargetEdgeWeight =
-                    (target.getSumOfEdgeWeightsConnectedToVertex() / (double)targetDegree);
+                    (target.getSumOfEdgeWeightsConnectedToVertex() / (double) targetDegree);
 
             calculateWeight(weightedSourceDegree, weightedTargetDegree);
         }
@@ -460,11 +510,11 @@ class SubRedditGraph {
          * Wij
          */
         private void calculateWeight(final double avgi, final double avgj) {
-            this.weight = (double)numberOfUsersInThoseSubreddits / ((avgi + avgj) / 2); // todo: (avgi + avgj) / 2 yes no???
+            this.weight = (double) numberOfUsersInThoseSubreddits / ((avgi + avgj) / 2); // todo: (avgi + avgj) / 2 yes no???
         }
 
         public String[] toCsvLine() {
-            return new String[] {
+            return new String[]{
                     sourceName, // i
                     targetName, // j
                     String.valueOf(numberOfUsersInThoseSubreddits), // Uij

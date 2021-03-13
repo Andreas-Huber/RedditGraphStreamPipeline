@@ -12,7 +12,7 @@ import java.util.concurrent.CompletionStage;
 
 public class FileUtils {
 
-    private static Reader getFileReaderBasedOnType(java.io.File file) throws IOException, CompressorException {
+    public static Reader getFileReaderBasedOnType(java.io.File file) throws IOException, CompressorException {
         var extension = Files.getFileExtension(file.toString());
         if(extension.equals("zst") ){
             var fileInputStream = new FileInputStream(file);
@@ -22,7 +22,7 @@ public class FileUtils {
                     .createCompressorInputStream(compressionName, bufferedInputStream, true);
             return new InputStreamReader(compressorInputStream);
         } else {
-            return new FileReader(file);
+            return new BufferedReader(new FileReader(file));
         }
     }
 
