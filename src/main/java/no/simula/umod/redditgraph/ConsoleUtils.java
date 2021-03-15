@@ -3,7 +3,7 @@ package no.simula.umod.redditgraph;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-public class ConsoleUtils {
+class ConsoleUtils {
 
     /**
      * Logg the message with including the time

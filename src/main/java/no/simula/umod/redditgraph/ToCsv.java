@@ -1,5 +1,5 @@
 package no.simula.umod.redditgraph;
 
-public interface ToCsv {
+interface ToCsv {
     String[] toCsvLine();
 }

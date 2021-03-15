@@ -50,7 +50,7 @@ class Main implements Callable<Integer> {
     }
 
     private void LoadFromVertexEdgeList() throws IOException, CompressorException {
-        final var subredditGraph = new SubRedditGraph();
+        final var subredditGraph = new SubredditGraph();
 
         // Reimport graph
         subredditGraph.loadGraphFromVertexEdgeList(files);
@@ -66,7 +66,7 @@ class Main implements Callable<Integer> {
     }
 
     private void CreateFromUserSubredditCsvAndExport() throws IOException, CompressorException {
-        final var subredditGraph = new SubRedditGraph();
+        final var subredditGraph = new SubredditGraph();
 
         // Import and create
         subredditGraph.createGraphFromUserSubredditCsv(files);

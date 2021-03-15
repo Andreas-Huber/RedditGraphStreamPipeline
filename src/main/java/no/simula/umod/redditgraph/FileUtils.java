@@ -10,7 +10,7 @@ import java.io.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-public class FileUtils {
+class FileUtils {
 
     public static Reader getFileReaderBasedOnType(java.io.File file) throws IOException, CompressorException {
         var extension = Files.getFileExtension(file.toString());
