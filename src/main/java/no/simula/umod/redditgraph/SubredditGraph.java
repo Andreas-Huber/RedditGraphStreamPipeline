@@ -97,11 +97,17 @@ class SubredditGraph {
         vertexMap.values().parallelStream().forEach(SrVertex::calculateScoresDependentOnEdgeScores);
         logDuration("Finished calculating the edge dependent vertex scores", startTime);
 
+        logGraphMetrics();
+    }
+
+    private void logGraphMetrics() {
         log("# Vertices " + g.vertexSet().size());
         log("# Edges    " + g.edgeSet().size());
     }
 
     public void loadGraphFromVertexEdgeList(List<File> inputFile) throws IOException, CompressorException {
+        var startTime = System.nanoTime();
+        log("Start load graph from vertex and edge list");
         final var vertexFile = inputFile.stream().filter(f -> f.getName().contains("vertex")).findFirst().get();
         final var edgeFile = inputFile.stream().filter(f -> f.getName().contains("edge")).findFirst().get();
 
@@ -120,24 +126,31 @@ class SubredditGraph {
                 g.addVertex(vertex);
                 vertexMap.put(vertex.subreddit, vertex);
             });
+            logDuration("Finished loading the vertices", startTime);
+            startTime = System.nanoTime();
         }
 
+
         // Load edges
-        final var edgeReader = FileUtils.getFileReaderBasedOnType(edgeFile);
-        final Stream<Edge> edgeStream = new CsvToBeanBuilder<Edge>(edgeReader)
-                .withType(Edge.class)
-                .withOrderedResults(false)
-                .build()
-                .stream();
+        {
+            final var edgeReader = FileUtils.getFileReaderBasedOnType(edgeFile);
+            final Stream<Edge> edgeStream = new CsvToBeanBuilder<Edge>(edgeReader)
+                    .withType(Edge.class)
+                    .withOrderedResults(false)
+                    .build()
+                    .stream();
 
-        edgeStream.forEach(edge -> {
-            edge.setGraph(g);
+            edgeStream.forEach(edge -> {
+                edge.setGraph(g);
 
-            final var src = vertexMap.get(edge.sourceName);
-            final var tar = vertexMap.get(edge.targetName);
-            g.addEdge(src, tar, edge);
-        });
+                final var src = vertexMap.get(edge.sourceName);
+                final var tar = vertexMap.get(edge.targetName);
+                g.addEdge(src, tar, edge);
+            });
+            logDuration("Finished loading the edges", startTime);
+        }
 
+        logGraphMetrics();
     }
 
     public CompletionStage<Void> exportVertexList(File outFile) {
