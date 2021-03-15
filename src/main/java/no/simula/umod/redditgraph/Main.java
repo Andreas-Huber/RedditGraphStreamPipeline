@@ -1,15 +1,23 @@
 package no.simula.umod.redditgraph;
 
+import org.apache.commons.compress.compressors.CompressorException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
 
 import static no.simula.umod.redditgraph.ConsoleUtils.logDuration;
+
+
+enum ProgramMode {
+    CreateFromUserSubredditCsvAndExport,
+    LoadFromVertexEdgeList
+}
 
 @SuppressWarnings("unused")
 @Command(name = "rgraph", mixinStandardHelpOptions = true, version = "not versioned / latest build from master",
@@ -18,6 +26,9 @@ class Main implements Callable<Integer> {
 
     @Parameters(description = "Files to lad the graph from.")
     private List<File> files;
+
+    @Option(names= {"--mode"}, description = "Modes: ${COMPLETION-CANDIDATES}")
+    private ProgramMode programMode;
 
     @Option(names= {"--out-edge-csv"}, description = "Output file for the edge list csv.")
     private File outEdgeCsv;
@@ -31,10 +42,34 @@ class Main implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
 
-        final var subredditGraph = new SubRedditGraph();
+        if(programMode == ProgramMode.CreateFromUserSubredditCsvAndExport)
+            CreateFromUserSubredditCsvAndExport();
+        else if (programMode == ProgramMode.LoadFromVertexEdgeList)
+            LoadFromVertexEdgeList();
+        return 0;
+    }
+
+    private void LoadFromVertexEdgeList() throws IOException, CompressorException {
+        final var subredditGraph = new SubredditGraph();
+
+        // Reimport graph
+        subredditGraph.loadGraphFromVertexEdgeList(files);
+
+        // Parallel export
+        final var startTime = System.nanoTime();
+
+        var dotFuture = subredditGraph.exportDot(outDot).thenRunAsync(() ->
+                logDuration("Exported dot", startTime)
+        ).toCompletableFuture();
+
+        dotFuture.join();
+    }
+
+    private void CreateFromUserSubredditCsvAndExport() throws IOException, CompressorException {
+        final var subredditGraph = new SubredditGraph();
 
         // Import and create
-        subredditGraph.createCountListFromCsv(files);
+        subredditGraph.createGraphFromUserSubredditCsv(files);
 
         // Parallel export
         final var startTime = System.nanoTime();
@@ -54,8 +89,6 @@ class Main implements Callable<Integer> {
         dotFuture.join();
         edgeCsvFuture.join();
         vertexCsvFuture.join();
-
-        return 0;
     }
 
     /**
