@@ -25,7 +25,7 @@ libraryDependencies += "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersio
 
 // JavaAppPackaging https://sbt-native-packager.readthedocs.io/en/latest/archetypes/java_app/index.html
 enablePlugins(JavaAppPackaging)
-mainClass in Compile := Some("no.simula.umod.redditdatasetstreampipeline.Main")
+Compile / mainClass := Some("no.simula.umod.redditdatasetstreampipeline.Main")
 // discard automatically found main classes
-discoveredMainClasses in Compile := Seq()
+Compile / discoveredMainClasses := Seq()
 maintainer := "andreas.huber@infinite-coding.com"
