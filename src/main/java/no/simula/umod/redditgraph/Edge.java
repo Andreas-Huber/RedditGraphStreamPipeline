@@ -84,6 +84,7 @@ public class Edge extends DefaultWeightedEdge implements ToCsv {
 
     /**
      * Calculates weights after the vertex scores have ben calculated
+     * TODO: This has to be corrected
      */
     public void calculateScoresDependentOnVertex() {
         final SrVertex source = getSrc();

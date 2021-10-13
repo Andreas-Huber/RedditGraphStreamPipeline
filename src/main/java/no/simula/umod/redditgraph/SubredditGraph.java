@@ -83,6 +83,8 @@ class SubredditGraph {
         startTime = System.nanoTime();
         users = null;
 
+        // SEQUENCE
+
         // Calculate vertex scores that are not dependent on edge scores
         vertexMap.values().parallelStream().forEach(SrVertex::calculateIndependentScores);
         logDuration("Finished calculating the independent vertex scores", startTime);
