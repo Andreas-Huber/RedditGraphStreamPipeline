@@ -103,6 +103,7 @@ public class Edge extends DefaultWeightedEdge implements ToCsv {
         this.avgWeightedTargetEdgeWeight =
                 (target.sumOfEdgeWeightsConnectedToVertex / (double) targetDegree);
 
+        // 2021-08-26: This shall be the avgWeightedSourceEdgeWeight
         calculateWeight(weightedSourceDegree, weightedTargetDegree);
     }
 
@@ -110,7 +111,7 @@ public class Edge extends DefaultWeightedEdge implements ToCsv {
      * Wij
      */
     private void calculateWeight(final double avgi, final double avgj) {
-        this.weight = (double) numberOfUsersInThoseSubreddits / ((avgi + avgj) / 2); // todo: (avgi + avgj) / 2 yes no???
+        this.weight = (double) numberOfUsersInThoseSubreddits / ((avgi + avgj) / 2);
     }
 
     public String[] toCsvLine() {
