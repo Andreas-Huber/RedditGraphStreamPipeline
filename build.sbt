@@ -8,8 +8,8 @@ val AkkaVersion = "2.6.10"
 val AlpakkaVersion = "2.0.2"
 
 // Application Dependencies
-libraryDependencies += "com.github.luben" % "zstd-jni" % "1.4.5-12"
-libraryDependencies += "org.apache.commons" % "commons-compress" % "1.20"
+libraryDependencies += "com.github.luben" % "zstd-jni" % "1.5.2-1"
+libraryDependencies += "org.apache.commons" % "commons-compress" % "1.21"
 libraryDependencies += "org.tukaani" % "xz" % "1.8"
 libraryDependencies += "com.typesafe.akka" %% "akka-stream" % AkkaVersion
 libraryDependencies += "com.lightbend.akka" %% "akka-stream-alpakka-json-streaming" % AlpakkaVersion
