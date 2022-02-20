@@ -103,8 +103,7 @@ public class Edge extends DefaultWeightedEdge implements ToCsv {
         this.avgWeightedTargetEdgeWeight =
                 (target.sumOfEdgeWeightsConnectedToVertex / (double) targetDegree);
 
-        // 2021-08-26: This shall be the avgWeightedSourceEdgeWeight
-        calculateWeight(weightedSourceDegree, weightedTargetDegree);
+        calculateWeight(avgWeightedSourceEdgeWeight, avgWeightedTargetEdgeWeight);
     }
 
     /**
