@@ -6,6 +6,8 @@
 # (may want to keep parts of 'project')
 bin/
 project/
+!project/build.sbt
+!project/plugins.sbt
 target/
 build/
 null/
