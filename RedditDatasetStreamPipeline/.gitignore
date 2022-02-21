@@ -5,8 +5,8 @@
 # sbt
 # (may want to keep parts of 'project')
 bin/
-project/
-!project/build.sbt
+/project/*
+!project/build.Properties
 !project/plugins.sbt
 target/
 build/

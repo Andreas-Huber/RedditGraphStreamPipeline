@@ -18,6 +18,8 @@ jobs:
       with:
         java-version: 11
     - name: Run tests
+      working-directory: ./RedditDatasetStreamPipeline
       run: sbt test
     - name: Build Zip Package witha all dependencies
+      working-directory: ./RedditDatasetStreamPipeline
       run: sbt universal:packageBin
