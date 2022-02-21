@@ -2,7 +2,7 @@ name := "redditdatasetstreampipeline"
 
 version := "0.1"
 
-scalaVersion := "2.13.4"
+scalaVersion := "2.13.8"
 
 val AkkaVersion = "2.6.10"
 val AlpakkaVersion = "2.0.2"
