@@ -145,7 +145,7 @@ object Main extends App {
       println(s"Started at:         ${Calendar.getInstance().getTime()}")
       println(f"Dataset directory:  ${config.datasetDirectory}")
       println(f"Filter:             ${config.fileNameContainsFilter}")
-      println(f"Exclude:            ${config.fileNameContainsFilter}")
+      println(f"Exclude:            ${config.fileNameNotContainsFilter}")
       println(f"Subreddit Filter:   ${config.filterBySubreddits}")
 
       config.programMode match {
