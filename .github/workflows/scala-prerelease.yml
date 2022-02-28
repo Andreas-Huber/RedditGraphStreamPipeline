@@ -17,9 +17,11 @@ jobs:
           java-version: 11
 
       - name: Run tests
+        working-directory: ./RedditDatasetStreamPipeline
         run: sbt test
 
       - name: Build Zip Package witha all dependencies
+        working-directory: ./RedditDatasetStreamPipeline
         run: sbt universal:packageBin
     
       - name: Azure Login
@@ -29,6 +31,7 @@ jobs:
           creds:  ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: Upload to Azure Blob
+        working-directory: ./RedditDatasetStreamPipeline
         run: az storage blob upload --account-name redditpipeline -f target/universal/redditdatasetstreampipeline-0.1.zip -c deploy -n rdsp-latest.zip
       
       - uses: "marvinpinto/action-automatic-releases@latest"
@@ -38,4 +41,4 @@ jobs:
           prerelease: false
           title: "Latest Build"
           files: |
-            target/universal/redditdatasetstreampipeline-*.zip
+            RedditDatasetStreamPipeline/target/universal/redditdatasetstreampipeline-*.zip
