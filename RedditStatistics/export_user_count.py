@@ -37,5 +37,13 @@ if __name__ == '__main__':
         export_top_n_counts("UserContributionsInSubreddits_2005-2019", i)
 
         for year in range(2005, 2020):
+            # yearly
             export_top_n_counts(f"UsersInSubreddits_{year}", i)
             export_top_n_counts(f"UserContributionsInSubreddits_{year}", i)
+
+            # monthly
+            for month in range(1, 13):
+                # ignore months of the incomplete year 2005
+                if not (year == 2005 and month <= 5):
+                    export_top_n_counts(f"UsersInSubreddits_{year}-{month:02d}", i)
+
