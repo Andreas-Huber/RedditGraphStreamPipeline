@@ -27,6 +27,11 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
+        name: allpipeline.zip
+        path: .
+
+    - uses: actions/upload-artifact@v3
+      with:
         name: redditdatasetstreampipeline.zip
         path: target/universal/redditdatasetstreampipeline-0.1.zip
         if-no-files-found: error
@@ -61,6 +66,11 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
+        name: allgraph.zip
+        path: .
+
+    - uses: actions/upload-artifact@v3
+      with:
         name: RedditGraph.jar
-        path: build/libs/RedditGraph-1.0-SNAPSHOT-all.jar
+        path: RedditGraph/build/libs/RedditGraph-1.0-SNAPSHOT-all.jar
         if-no-files-found: error
