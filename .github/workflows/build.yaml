@@ -1,0 +1,66 @@
+name: build-sbt
+
+on:
+  workflow_call:
+
+jobs:
+  build-sbt:
+    name: Reddit Graph Stream Pipeline CI with SBT
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./RedditDatasetStreamPipeline
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v1
+      with:
+        java-version: 17
+    
+    - name: Run tests
+      run: sbt test
+
+    - name: Build Zip Package witha all dependencies
+      run: sbt universal:packageBin
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: redditdatasetstreampipeline.zip
+        path: target/universal/redditdatasetstreampipeline-0.1.zip
+        if-no-files-found: error
+
+
+  build-gradle:
+    name: RedditGraph CI with Gradle
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./RedditGraph
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v1
+      with:
+        java-version: 17
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew build
+
+    - name: Test
+      run: ./gradlew test
+
+    - name: Build fat JAR
+      run: ./gradlew shadowjar
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: RedditGraph.jar
+        path: build/libs/RedditGraph-1.0-SNAPSHOT-all.jar
+        if-no-files-found: error

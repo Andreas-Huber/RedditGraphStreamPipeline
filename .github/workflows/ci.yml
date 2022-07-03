@@ -8,51 +8,7 @@ on:
 
 
 jobs:
-  build-sbt:
-    name: Reddit Graph Stream Pipeline CI with SBT
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./RedditDatasetStreamPipeline
+  call-workflow:
+    uses: build.yml@v1
 
-    steps:
-    - uses: actions/checkout@v2
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v1
-      with:
-        java-version: 17
-    
-    - name: Run tests
-      run: sbt test
-
-    - name: Build Zip Package witha all dependencies
-      working-directory: ./RedditDatasetStreamPipeline
-      run: sbt universal:packageBin
-  
-  build-gradle:
-    name: RedditGraph CI with Gradle
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./RedditGraph
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v1
-      with:
-        java-version: 17
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Build with Gradle
-      run: ./gradlew build
-
-    - name: Test
-      run: ./gradlew test
-
-    - name: Build fat JAR
-      run: ./gradlew shadowjar
