@@ -57,6 +57,7 @@ jar {
 }
 
 shadowJar {
+    archiveFileName = "RedditGraph.${extension}"
     transform(com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer) {
         resource = 'reference.conf'
     }
