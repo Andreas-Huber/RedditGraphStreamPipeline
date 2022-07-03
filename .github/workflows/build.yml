@@ -1,4 +1,4 @@
-name: build-sbt
+name: build
 
 on:
   workflow_call:
