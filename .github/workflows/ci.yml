@@ -10,3 +10,22 @@ on:
 jobs:
   build:
     uses: ./.github/workflows/build.yml
+    
+  release:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+    
+      - name: Download a Build Artifact RedditGraph
+        uses: actions/download-artifact@v3
+        with:
+          name: RedditGraph
+          
+      - name: Download a Build Artifact redditdatasetstreampipeline
+        uses: actions/download-artifact@v3
+        with:
+          name: redditdatasetstreampipeline
+          
+      - name: Display structure of downloaded files
+        run: ls -R
+  
