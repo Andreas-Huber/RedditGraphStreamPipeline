@@ -15,12 +15,12 @@ jobs:
     steps:
     
       - name: Download a Build Artifact RedditGraph
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: RedditGraph
           
       - name: Download a Build Artifact redditdatasetstreampipeline
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: redditdatasetstreampipeline
           
